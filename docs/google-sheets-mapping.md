@@ -78,8 +78,10 @@ Struktur juga menyiapkan data yang belum terdapat sebagai kolom eksplisit pada s
 
 Migrasi struktur sudah disiapkan di `supabase/migrations/20260918_prepare_spreadsheet_import.sql`. Tahap ini hanya menyiapkan struktur; belum mengimpor isi spreadsheet.
 
+Sinkronisasi dua arah billing ↔ Supabase ↔ Google Sheets sudah dipensiunkan. Dokumen ini hanya tersisa sebagai referensi struktur data dan impor manual yang tidak berjalan otomatis.
+
 ## Formula billing di aplikasi
 
 Aplikasi membaca spreadsheet tanpa menulis atau mengubah formula apa pun. Endpoint `/api/billing` menerapkan hasil bisnis yang sama secara read-only: harga paket diambil dari tab `Paket`, OLT dan PON diparse dari label ODP, kode ODP diambil dengan padanan `VLOOKUP` ke kolom kode ODP, dan port ODP dihitung seperti `COUNTIF` yang dibatasi kapasitas ODP. Ringkasan dashboard, daftar pelanggan, dan detail invoice menggunakan hasil dari modul kalkulasi yang sama.
 
-Jika spreadsheet tidak dapat diekspor oleh runtime deployment karena aksesnya privat, data harus diimpor melalui proses backend/Supabase yang terautentikasi. Spreadsheet sumber tetap tidak disentuh.
+Jika spreadsheet tidak dapat diekspor oleh runtime deployment karena aksesnya privat, data harus diimpor melalui proses backend/Supabase yang terautentikasi. Spreadsheet sumber tetap tidak disentuh, dan aplikasi billing normal tetap berjalan tanpa sinkronisasi dua arah.
