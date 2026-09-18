@@ -200,6 +200,26 @@
   <script src="https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js"></script>
   <script>
 
+    const palette = [['#168f42','#ffffff'],['#087df0','#ffffff'],['#df2939','#ffffff'],['#159bb0','#ffffff'],['#f4b400','#241b00'],['#7138c8','#ffffff'],['#e76f20','#ffffff'],['#087f8c','#ffffff']];
+    const cards = [...document.querySelectorAll('[data-color]')];
+    cards.forEach((card, i) => { const [background, foreground] = palette[i % palette.length]; card.style.background = background; card.style.color = foreground; if (foreground === '#241b00') card.classList.add('dark-text'); });
+    const themeButtons = [...document.querySelectorAll('.theme-option')];
+    const applyTheme = (theme) => { const validThemes = ['gelap','biru','hijau','ping']; const selected = validThemes.includes(theme) ? theme : 'biru'; document.body.classList.remove(...validThemes.map((name) => `theme-${name}`)); document.body.classList.add(`theme-${selected}`); themeButtons.forEach((button) => { const active = button.dataset.theme === selected; button.classList.toggle('active', active); button.setAttribute('aria-pressed', String(active)); }); document.querySelector('meta[name="theme-color"]').setAttribute('content', getComputedStyle(document.body).getPropertyValue('--accent').trim()); localStorage.setItem('billing-theme', selected); };
+    themeButtons.forEach((button) => button.addEventListener('click', () => applyTheme(button.dataset.theme)));
+    const loginForm = document.getElementById('loginForm');
+    const loginError = document.getElementById('loginError');
+    const setAuthenticated = (user) => { document.body.classList.add('authenticated'); document.querySelector('.welcome').textContent = `● ${user.displayName || user.username} (${user.role})`; };
+    fetch('/api/session').then((response) => response.ok ? response.json() : Promise.reject()).then(({ user }) => setAuthenticated(user)).catch(() => {});
+    loginForm.addEventListener('submit', async (event) => { event.preventDefault(); const button = loginForm.querySelector('button'); button.disabled = true; loginError.textContent = ''; try { const response = await fetch('/api/login', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(Object.fromEntries(new FormData(loginForm))) }); const result = await response.json(); if (!response.ok) throw new Error(result.error || 'Login gagal'); setAuthenticated(result.user); } catch (error) { loginError.textContent = error.message; } finally { button.disabled = false; } });
+    applyTheme(localStorage.getItem('billing-theme') || 'biru');
+    const menuButton = document.getElementById('menuButton'); const sidebar = document.getElementById('mainSidebar');
+    const setMenuState = (isOpen) => { sidebar.classList.toggle('open', isOpen); document.body.classList.toggle('menu-open', isOpen && !window.matchMedia('(max-width: 760px)').matches); menuButton.setAttribute('aria-expanded', String(isOpen)); menuButton.setAttribute('aria-label', isOpen ? 'Tutup menu' : 'Buka menu'); };
+    menuButton.addEventListener('click', () => setMenuState(!sidebar.classList.contains('open')));
+    document.addEventListener('click', (event) => { if (sidebar.classList.contains('open') && !sidebar.contains(event.target) && !menuButton.contains(event.target)) setMenuState(false); });
+    sidebar.querySelectorAll('a').forEach((link) => link.addEventListener('click', () => { if (window.matchMedia('(max-width: 760px)').matches) setMenuState(false); }));
+    document.querySelector('a[href="#logout"]').addEventListener('click', async (event) => { event.preventDefault(); await fetch('/api/session', { method: 'DELETE' }); window.location.reload(); });
+    window.addEventListener('resize', () => { if (!window.matchMedia('(max-width: 760px)').matches) setMenuState(false); });
+
     const customerPanel = document.getElementById('pelanggan');
     const customerCount = document.getElementById('customerCount');
     const customerSubtitle = document.getElementById('customerSubtitle');
