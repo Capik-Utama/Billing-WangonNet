@@ -2,7 +2,7 @@
 
 Struktur awal halaman utama eBilling sudah disiapkan dalam file `index.html`.
 
-Catatan: halaman ini masih berupa prototipe statis untuk struktur antarmuka utama. Modul yang ditampilkan belum memiliki backend, autentikasi, atau proses bisnis yang aktif. Menu seperti `Login API Service`, `Users`, dan `Informasi Logout` saat ini masih sebatas placeholder informasi struktur.
+Catatan: halaman ini masih berupa prototipe statis untuk struktur antarmuka utama. Modul yang ditampilkan belum memiliki backend, autentikasi, atau proses bisnis yang aktif. Menu seperti `Login API Service`, `Users`, dan `Informasi Logout` saat ini masih sebatas penanda struktur informasi.
 
 ## Isi awal
 
