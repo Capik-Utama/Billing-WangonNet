@@ -165,8 +165,8 @@
     .customer-actions button.secondary, .file-label.secondary { background:#e8f1fb; color:var(--ink); border:1px solid var(--line); }
     .file-label input { display:none; }
     .customer-status { min-height:22px; color:var(--muted); font-size:13px; font-weight:700; margin:10px 0; }
-    .customer-table-wrap { overflow:auto; border:1px solid var(--line); border-radius:11px; }
-    .customer-table { border-collapse:collapse; min-width:1100px; width:100%; font-size:13px; }
+    .customer-table-wrap { overflow-x:auto; overflow-y:hidden; width:100%; border:1px solid var(--line); border-radius:11px; -webkit-overflow-scrolling:touch; }
+    .customer-table { border-collapse:collapse; min-width:1200px; width:max-content; font-size:13px; }
     .customer-table th, .customer-table td { padding:10px 11px; border-bottom:1px solid #e6eef8; text-align:left; white-space:nowrap; }
     .customer-table th { background:#eef6ff; color:var(--ink); position:sticky; top:0; z-index:1; }
     .sort-header { border:0; background:transparent; color:inherit; font:inherit; font-weight:800; cursor:pointer; padding:0; text-align:left; white-space:nowrap; }
@@ -223,10 +223,10 @@
           <button type="button" class="back-dashboard" id="backDashboard">← Beranda</button>
           <div><h2 id="customerTitle">Data Pelanggan</h2><p id="customerSubtitle">Memuat data pelanggan dari billing…</p></div>
           <div class="customer-actions" aria-label="Aksi data pelanggan">
-            <button type="button" id="googleImport">↥ Import dari Google Sheet</button>
-            <button type="button" id="googleExport">↧ Export ke Google Sheet</button>
-            <label class="file-label secondary">↥ Import dari Excel<input id="excelImport" type="file" accept=".csv,.xlsx,.xls,text/csv"></label>
-            <button type="button" class="secondary" id="excelExport">↧ Export ke Excel</button>
+
+
+
+
           </div>
         </div>
         <div class="customer-status" id="customerStatus" role="status"></div>
@@ -304,42 +304,14 @@
     let sheetTabs = {}; let activeSheet = ''; let sheetSortIndex = null; let sheetSortDirection = 1; let sheetPage = 1; let sheetPageSize = 10;
     const sheetCell = (cell) => typeof cell === 'object' ? (cell.value ?? '') : (cell ?? '');
     const showSheet = async (name) => { dashboardPage.hidden=true; customerPanel.hidden=true; sheetPanel.hidden=false; activeSheet=name; sheetSortIndex=null; sheetSortDirection=1; sheetPage=1; sheetTitle.textContent=`Data ${name}`; history.replaceState(null,'',`#${name.toLowerCase()}`); try { if (!Object.keys(sheetTabs).length) { const r=await fetch('/data/spreadsheet-tabs.json',{cache:'no-store'}); if(!r.ok) throw new Error('Snapshot spreadsheet tidak tersedia'); sheetTabs=await r.json(); } renderSheet(); } catch(e) { sheetStatus.textContent=e.message; } };
-    const renderSheet = () => { const tab=sheetTabs[activeSheet]; if(!tab) return; const rows=tab.rows||[]; sheetSubtitle.textContent=`${rows.length} baris × ${tab.columnCount} kolom dari spreadsheet`; const ordered=rows.map((row,index)=>({row,index})); if(sheetSortIndex!==null) ordered.sort((a,b)=>String(sheetCell(a.row[sheetSortIndex])).localeCompare(String(sheetCell(b.row[sheetSortIndex])),'id',{numeric:true,sensitivity:'base'})*sheetSortDirection||a.index-b.index); const sheetPageCount=Math.max(1,Math.ceil(ordered.length/sheetPageSize)); sheetPage=Math.min(sheetPage,sheetPageCount); const sheetVisible=ordered.slice((sheetPage-1)*sheetPageSize,sheetPage*sheetPageSize); sheetHead.innerHTML='<tr>'+Array.from({length:tab.columnCount},(_,i)=>`<th><button class="sheet-sort" type="button" data-index="${i}">Kolom ${i+1} <span>${sheetSortIndex===i?(sheetSortDirection===1?'▲':'▼'):'↕'}</span></button></th>`).join('')+'</tr>'; sheetBody.innerHTML=sheetVisible.map(({row})=>'<tr>'+Array.from({length:tab.columnCount},(_,i)=>{const c=row[i]||{value:''}; const value=sheetCell(c); const formula=c.formula?` title="Rumus: ${escapeCell(c.formula)}"`:''; return `<td${formula}>${escapeCell(value)}</td>`;}).join('')+'</tr>').join(''); sheetPagination.innerHTML=`<label>Per halaman <input id="sheetPageSize" type="number" min="1" max="500" value="${sheetPageSize}"></label><button type="button" data-page="prev">‹</button>${Array.from({length:sheetPageCount},(_,i)=>`<button type="button" data-page="${i+1}" class="${sheetPage===i+1?'active':''}">${i+1}</button>`).join('')}<button type="button" data-page="next">›</button>`; sheetPagination.querySelector('#sheetPageSize').addEventListener('change',(e)=>{sheetPage=Math.max(1,Number(e.target.value)||10);renderSheet();}); sheetPagination.querySelectorAll('button').forEach((button)=>button.addEventListener('click',()=>{const target=button.dataset.page;if(target==='prev')sheetPage=Math.max(1,sheetPage-1);else if(target==='next')sheetPage=Math.min(sheetPageCount,sheetPage+1);else sheetPage=Number(target);renderSheet();})); sheetHead.querySelectorAll('.sheet-sort').forEach(b=>b.addEventListener('click',()=>{const i=Number(b.dataset.index); if(sheetSortIndex===i) sheetSortDirection*=-1; else {sheetSortIndex=i;sheetSortDirection=1;} sheetPage=1; renderSheet();})); };
+    const renderSheet = () => { const tab=sheetTabs[activeSheet]; if(!tab) return; const rows=tab.rows||[]; sheetSubtitle.textContent=`${rows.length} baris × ${tab.columnCount} kolom dari spreadsheet`; const ordered=rows.map((row,index)=>({row,index})); if(sheetSortIndex!==null) ordered.sort((a,b)=>String(sheetCell(a.row[sheetSortIndex])).localeCompare(String(sheetCell(b.row[sheetSortIndex])),'id',{numeric:true,sensitivity:'base'})*sheetSortDirection||a.index-b.index); const sheetPageCount=Math.max(1,Math.ceil(ordered.length/sheetPageSize)); sheetPage=Math.min(sheetPage,sheetPageCount); const sheetVisible=ordered.slice((sheetPage-1)*sheetPageSize,sheetPage*sheetPageSize); sheetHead.innerHTML='<tr>'+Array.from({length:tab.columnCount},(_,i)=>`<th><button class="sheet-sort" type="button" data-index="${i}">Kolom ${i+1} <span>${sheetSortIndex===i?(sheetSortDirection===1?'▲':'▼'):'↕'}</span></button></th>`).join('')+'<th>Aksi</th></tr>'; sheetBody.innerHTML=sheetVisible.map(({row})=>'<tr>'+Array.from({length:tab.columnCount},(_,i)=>{const c=row[i]||{value:''}; const value=sheetCell(c); const formula=c.formula?` title="Rumus: ${escapeCell(c.formula)}"`:''; return `<td${formula}>${escapeCell(value)}</td>`;}).join('')+'<td><span class="row-actions"><button type="button" class="row-action" data-action="edit" title="Edit data" aria-label="Edit data">✎</button><button type="button" class="row-action" data-action="payment" title="Pembayaran" aria-label="Pembayaran">▣</button><button type="button" class="row-action" data-action="activate" title="Aktifkan" aria-label="Aktifkan">✓</button><button type="button" class="row-action" data-action="deactivate" title="Nonaktifkan" aria-label="Nonaktifkan">⏻</button><button type="button" class="row-action row-action-delete" data-action="delete" title="Hapus" aria-label="Hapus">⌫</button></span></td></tr>').join(''); sheetPagination.innerHTML=`<label>Per halaman <input id="sheetPageSize" type="number" min="1" max="500" value="${sheetPageSize}"></label><button type="button" data-page="prev">‹</button>${Array.from({length:sheetPageCount},(_,i)=>`<button type="button" data-page="${i+1}" class="${sheetPage===i+1?'active':''}">${i+1}</button>`).join('')}<button type="button" data-page="next">›</button>`; sheetPagination.querySelector('#sheetPageSize').addEventListener('change',(e)=>{sheetPage=Math.max(1,Number(e.target.value)||10);renderSheet();}); sheetPagination.querySelectorAll('button').forEach((button)=>button.addEventListener('click',()=>{const target=button.dataset.page;if(target==='prev')sheetPage=Math.max(1,sheetPage-1);else if(target==='next')sheetPage=Math.min(sheetPageCount,sheetPage+1);else sheetPage=Number(target);renderSheet();})); sheetHead.querySelectorAll('.sheet-sort').forEach(b=>b.addEventListener('click',()=>{const i=Number(b.dataset.index); if(sheetSortIndex===i) sheetSortDirection*=-1; else {sheetSortIndex=i;sheetSortDirection=1;} sheetPage=1; renderSheet();})); };
     document.querySelectorAll('a[href="#paket"],a[href="#area"],a[href="#odp"]').forEach(a=>a.addEventListener('click',e=>{e.preventDefault();showSheet(a.getAttribute('href').slice(1).replace(/^./,m=>m.toUpperCase()));}));
+    sheetBody.addEventListener('click',(event)=>{ const button=event.target.closest('.row-action'); if(!button) return; sheetStatus.textContent=`${({edit:'Edit data',payment:'Pembayaran',activate:'Aktifkan',deactivate:'Nonaktifkan',delete:'Hapus'})[button.dataset.action]}: aksi siap diproses.`; });
     document.getElementById('backSheetDashboard').addEventListener('click',showDashboard);
     document.getElementById('addCustomer').addEventListener('click',()=>setCustomerStatus('Form Tambah Data Pelanggan siap ditambahkan.'));
     document.getElementById('addSheetData').addEventListener('click',()=>{sheetStatus.textContent=`Form Tambah Data ${activeSheet} siap ditambahkan.`;});
     if(['paket','area','odp'].includes(location.hash.slice(1))) showSheet(location.hash.slice(1).replace(/^./,m=>m.toUpperCase()));
-    const downloadText = (name, content, type) => { const a=document.createElement('a'); a.href=URL.createObjectURL(new Blob([content],{type})); a.download=name; a.click(); setTimeout(()=>URL.revokeObjectURL(a.href),1000); };
-    const csvEscape = v => { const s=v??''; return /[",\n\r]/.test(s)?`"${String(s).replaceAll('"','""')}"`:s; };
-    const exportCustomers = (name) => { const rows=[customerHeaders,...customers.map(customerRow)]; downloadText(name,rows.map(r=>r.map(csvEscape).join(',')).join('\r\n'),'text/csv;charset=utf-8'); };
-    document.getElementById('excelExport').addEventListener('click',()=>exportCustomers('pelanggan-wangonnet.csv'));
-    document.getElementById('googleExport').addEventListener('click',()=>setCustomerStatus('Export Google Sheet memerlukan koneksi write-back Google Apps Script; endpoint siap ditambahkan setelah scope Google tersedia.'));
-    document.getElementById('googleImport').addEventListener('click',async()=>{ setCustomerStatus('Mengambil data Google Sheet…'); try { const r=await fetch('/api/customers',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({action:'google-import'})}); const d=await r.json(); if(!r.ok) throw new Error(d.error); setCustomerStatus(`Import selesai: ${d.inserted} baru, ${d.updated} diperbarui, ${d.skipped} dilewati.`); await loadCustomers(); } catch(e){setCustomerStatus(e.message,true);} });
-    document.getElementById('excelImport').addEventListener('change', async (event) => {
-      const file = event.target.files[0];
-      if (!file) return;
-      setCustomerStatus('Membaca file Excel/CSV…');
-      try {
-        let rows;
-        if (/\.xlsx?$/i.test(file.name)) {
-          const workbook = XLSX.read(await file.arrayBuffer(), { type: 'array' });
-          rows = XLSX.utils.sheet_to_json(workbook.Sheets[workbook.SheetNames[0]], { header: 1, defval: '' });
-        } else {
-          const text = await file.text();
-          rows = text.trim().split(/\r?\n/).map(line => line.split(/,(?=(?:[^\"]*\"[^\"]*\")*[^\"]*$)/).map(cell => cell.replace(/^\"|\"$/g, '').replaceAll('\"\"','\"')));
-        }
-        const response = await fetch('/api/customers', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ rows: rows.slice(1) }) });
-        const result = await response.json();
-        if (!response.ok) throw new Error(result.error || 'Import file gagal');
-        setCustomerStatus(`Import file selesai: ${result.inserted} baru, ${result.updated} diperbarui, ${result.skipped} dilewati.`);
-        await loadCustomers();
-      } catch (error) {
-        setCustomerStatus(error.message, true);
-      } finally {
-        event.target.value = '';
-      }
-    });
+
 
   </script>
 </body>
