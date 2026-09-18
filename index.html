@@ -184,6 +184,10 @@
       menuButton.setAttribute('aria-label', isOpen ? 'Tutup menu' : 'Buka menu');
     };
     menuButton.addEventListener('click', () => setMenuState(!sidebar.classList.contains('open')));
+    document.addEventListener('click', (event) => {
+      if (!sidebar.classList.contains('open')) return;
+      if (!sidebar.contains(event.target) && !menuButton.contains(event.target)) setMenuState(false);
+    });
     sidebar.querySelectorAll('a').forEach((link) => link.addEventListener('click', () => {
       if (window.matchMedia('(max-width: 760px)').matches) setMenuState(false);
     }));
