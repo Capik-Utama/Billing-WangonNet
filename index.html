@@ -123,6 +123,18 @@
       .card-action { font-size: 9px; }
     }
 
+    .page-view[hidden] { display: none; }
+    .customer-panel { margin-top: 0; }
+    .customer-panel .customer-head { align-items: center; }
+    .customer-table { min-width: 760px; }
+    .customer-table th:last-child, .customer-table td:last-child { width: 154px; text-align: right; }
+    .row-actions { display: inline-flex; align-items: center; justify-content: flex-end; gap: 4px; }
+    .row-action { width: 30px; height: 30px; padding: 0; border: 1px solid var(--line); border-radius: 7px; background: #f8fbff; color: var(--ink); cursor: pointer; font-size: 15px; line-height: 1; }
+    .row-action:hover, .row-action:focus-visible { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); outline: none; }
+    .row-action[data-action="activate"] { color: #168f42; }
+    .row-action[data-action="deactivate"] { color: #b42318; }
+    .back-dashboard { margin-right: auto; border: 1px solid var(--line); border-radius: 9px; padding: 10px 12px; background: #f8fbff; color: var(--ink); font: inherit; font-weight: 800; cursor: pointer; }
+    .back-dashboard:hover, .back-dashboard:focus-visible { background: var(--accent); color: var(--accent-ink); outline: none; }
     .customer-panel { margin-top: 24px; background: #fff; border: 1px solid var(--line); border-radius: 16px; box-shadow: var(--shadow); padding: clamp(16px, 3vw, 24px); scroll-margin-top: 82px; }
     .customer-panel[hidden] { display: none; }
     .customer-head { display:flex; align-items:flex-start; justify-content:space-between; gap:16px; margin-bottom:16px; }
@@ -169,7 +181,9 @@
         <div class="nav-group"><div class="nav-links"><a href="#voucher">Voucher</a><a href="#laporan">Laporan</a><a href="#users">User</a></div><details class="theme-settings" id="tema"><summary>🎨 Tema</summary><div class="theme-options" aria-label="Pilihan tema"><button class="theme-option" type="button" data-theme="biru">● Biru</button><button class="theme-option" type="button" data-theme="hijau">● Hijau</button><button class="theme-option" type="button" data-theme="ping">● Pink</button><button class="theme-option" type="button" data-theme="gelap">◐ Gelap</button></div></details><div class="nav-links"><a href="#logout">Logout</a></div></div>
       </nav>
     </aside>
-    <main class="main" id="dashboard">
+    <main class="main">
+      <section class="page-view" id="dashboard" aria-labelledby="dashboardTitle">
+        <h2 id="dashboardTitle" class="sr-only">Ringkasan dashboard</h2>
       <section class="cards" aria-label="Ringkasan dashboard">
         <article class="card" data-color><div class="card-body"><div class="card-value" id="customerCount">0</div><div class="card-label">Data Pelanggan</div></div><a class="card-action" href="#pelanggan">Selengkapnya ➜</a></article>
         <article class="card" data-color><div class="card-body"><div class="card-value">0</div><div class="card-label">Pelanggan Belum Lunas</div></div><a class="card-action" href="#keuangan">Selengkapnya ➜</a></article>
@@ -180,9 +194,11 @@
         <article class="card finance-card" data-color><div class="card-body"><div class="card-value">Rp. 0</div><div class="card-label">Pemasukan Bulan Ini</div></div><a class="card-action" href="#keuangan">Selengkapnya ➜</a></article>
         <article class="card finance-card" data-color><div class="card-body"><div class="card-value">Rp. 0</div><div class="card-label">Pengeluaran Bulan Ini</div></div><a class="card-action" href="#keuangan">Selengkapnya ➜</a></article>
       </section>
+      </section>
 
-      <section class="customer-panel" id="pelanggan" hidden aria-labelledby="customerTitle">
+      <section class="page-view customer-panel" id="pelanggan" hidden aria-labelledby="customerTitle">
         <div class="customer-head">
+          <button type="button" class="back-dashboard" id="backDashboard">← Beranda</button>
           <div><h2 id="customerTitle">Data Pelanggan</h2><p id="customerSubtitle">Memuat data pelanggan dari billing…</p></div>
           <div class="customer-actions" aria-label="Aksi data pelanggan">
             <button type="button" id="googleImport">↥ Import dari Google Sheet</button>
@@ -231,12 +247,18 @@
     const setCustomerStatus = (text, error=false) => { customerStatus.textContent=text; customerStatus.style.color=error?'#b42318':'var(--muted)'; };
     const renderCustomers = () => {
       customerCount.textContent=customers.length.toLocaleString('id-ID'); customerSubtitle.textContent=`${customers.length.toLocaleString('id-ID')} pelanggan tersimpan di billing`;
-      customerHead.innerHTML='<tr>'+['NO','Nama','Kode Pelanggan','Cabang','Area','Paket Internet','No HP','Alamat','Tanggal Bergabung','Hari Tagihan','Status'].map(h=>`<th>${h}</th>`).join('')+'</tr>';
-      customerBody.innerHTML=customers.map(c=>`<tr><td>${c.source_no??''}</td><td>${c.name??''}</td><td>${c.customer_code??''}</td><td>${c.branch_code??''}</td><td>${c.area_code??''}</td><td>${c.package_name??''}</td><td>${c.phone??c.whatsapp??''}</td><td>${c.address??''}</td><td>${c.join_date??''}</td><td>${c.billing_day??''}</td><td>${c.status??''}</td></tr>`).join(''); customerEmpty.hidden=customers.length>0;
+      customerHead.innerHTML='<tr>'+['Cabang','Nama','No HP','Alamat','Status','Aksi'].map(h=>`<th>${h}</th>`).join('')+'</tr>';
+      customerBody.innerHTML=customers.map(c=>`<tr><td>${c.branch_code??''}</td><td>${c.name??''}</td><td>${c.phone??c.whatsapp??''}</td><td>${c.address??''}</td><td>${c.status??''}</td><td><span class="row-actions"><button type="button" class="row-action" data-action="edit" title="Edit pelanggan" aria-label="Edit pelanggan">✎</button><button type="button" class="row-action" data-action="payment" title="Pembayaran" aria-label="Pembayaran">▣</button><button type="button" class="row-action" data-action="activate" title="Aktifkan pelanggan" aria-label="Aktifkan pelanggan">✓</button><button type="button" class="row-action" data-action="deactivate" title="Nonaktifkan pelanggan" aria-label="Nonaktifkan pelanggan">⏻</button></span></td></tr>`).join(''); customerEmpty.hidden=customers.length>0;
     };
     const loadCustomers = async () => { try { const r=await fetch('/api/customers'); const data=await r.json(); if(!r.ok) throw new Error(data.error); customerHeaders=data.headers||[]; customers=data.customers||[]; renderCustomers(); } catch(e) { setCustomerStatus(e.message,true); } };
-    const showCustomers = () => { customerPanel.hidden=false; customerPanel.scrollIntoView({behavior:'smooth',block:'start'}); loadCustomers(); };
+    const dashboardPage = document.getElementById('dashboard');
+    const showDashboard = () => { customerPanel.hidden=true; dashboardPage.hidden=false; history.replaceState(null, '', '#dashboard'); };
+    const showCustomers = () => { dashboardPage.hidden=true; customerPanel.hidden=false; history.replaceState(null, '', '#pelanggan'); loadCustomers(); };
     document.querySelectorAll('a[href="#pelanggan"]').forEach(a=>a.addEventListener('click',e=>{e.preventDefault();showCustomers();}));
+    document.querySelectorAll('a[href="#dashboard"]').forEach(a=>a.addEventListener('click',e=>{e.preventDefault();showDashboard();}));
+    document.getElementById('backDashboard').addEventListener('click', showDashboard);
+    customerBody.addEventListener('click', (event) => { const button=event.target.closest('.row-action'); if (!button) return; const labels={edit:'Edit pelanggan',payment:'Pembayaran',activate:'Aktifkan pelanggan',deactivate:'Nonaktifkan pelanggan'}; setCustomerStatus(`${labels[button.dataset.action]}: aksi siap diproses untuk pelanggan ini.`); });
+    if (location.hash === '#pelanggan') showCustomers();
     const downloadText = (name, content, type) => { const a=document.createElement('a'); a.href=URL.createObjectURL(new Blob([content],{type})); a.download=name; a.click(); setTimeout(()=>URL.revokeObjectURL(a.href),1000); };
     const csvEscape = v => { const s=v??''; return /[",\n\r]/.test(s)?`"${String(s).replaceAll('"','""')}"`:s; };
     const exportCustomers = (name) => { const rows=[customerHeaders,...customers.map(c=>customerHeaders.map((h,i)=>i===0?c.source_no:i===1?c.name:i===2?c.customer_code:i===3?c.branch_code:i===4?c.area_code:i===5?c.package_name:i===8?c.phone:i===11?c.address:i===40?c.join_date:i===41?c.billing_day:i===42?c.status:i===43?c.active_period:''))]; downloadText(name,rows.map(r=>r.map(csvEscape).join(',')).join('\r\n'),'text/csv;charset=utf-8'); };
