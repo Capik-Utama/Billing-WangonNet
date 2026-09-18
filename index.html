@@ -3,22 +3,21 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta name="theme-color" content="#ffc107">
+  <meta name="theme-color" content="#1769aa">
   <title>Dashboard e-Billing WangonNet</title>
   <style>
     :root {
-      --page: #f4f6fa;
-      --ink: #172033;
-      --muted: #526078;
-      --yellow: #ffc107;
+      --page: #eaf3ff;
+      --ink: #102a43;
+      --muted: #36536f;
       --green: #1fa84a;
-      --line: #dbe2ec;
+      --line: #b9d4f5;
       --shadow: 0 8px 22px rgba(22, 34, 55, .12);
-      --sidebar: #162238;
-      --sidebar-text: #f8fbff;
-      --sidebar-muted: #b8c9e1;
-      --accent: #ffc107;
-      --accent-ink: #3b2d00;
+      --sidebar: #0b3d91;
+      --sidebar-text: #ffffff;
+      --sidebar-muted: #dbeafe;
+      --accent: #1769aa;
+      --accent-ink: #ffffff;
     }
     body.theme-gelap { --page: #111827; --ink: #f8fafc; --muted: #d1d5db; --line: #374151; --sidebar: #030712; --sidebar-text: #f9fafb; --sidebar-muted: #cbd5e1; --accent: #1f2937; --accent-ink: #f9fafb; }
     body.theme-biru { --page: #eaf3ff; --ink: #102a43; --muted: #36536f; --line: #b9d4f5; --sidebar: #0b3d91; --sidebar-text: #ffffff; --sidebar-muted: #dbeafe; --accent: #1769aa; --accent-ink: #ffffff; }
@@ -122,7 +121,7 @@
         <div class="nav-group"><div class="nav-label">Dashboard</div><div class="nav-links"><a href="#dashboard" aria-current="page">⌂ Dashboard</a><a href="#dashboard-cabang">Dashboard Cabang</a><a href="#dashboard-sales">Dashboard Sales</a><a href="#dashboard-mitra">Dashboard Mitra</a><a href="#dashboard-grafik">Dashboard Grafik</a><a href="#dashboard-ppob">Dashboard PPOB</a><a href="#dashboard-voucher">Dashboard Voucher</a><a href="#dashboard-mapping">Dashboard Mapping <small>New</small></a><a href="#income-summary">Income Summary</a></div></div>
         <div class="nav-group"><div class="nav-label">Kelola Data</div><div class="nav-links"><a href="#pelanggan">Kelola Data</a><a href="#corporate">Kelola Data Corporate <small>New</small></a><a href="#poin">Poin Pelanggan</a><a href="#mikrotik">Management Mikrotik <small>New</small></a></div></div>
         <div class="nav-group"><div class="nav-label">Operasional</div><div class="nav-links"><a href="#android">Apk Android</a><a href="#ticket">Ticket</a><a href="#voucher">Voucher</a><a href="#transaksi">Transaksi</a></div></div>
-        <div class="nav-group"><div class="nav-label">Keuangan &amp; Sistem</div><div class="nav-links"><a href="#keuangan">Finance &amp; Accounting</a><a href="#laporan">Laporan <small>New</small></a><a href="#payment">Payment Gateway</a><a href="#api">Login API Service</a><a href="#api-docs">Dokumentasi API <small>New</small></a><a href="#logs">Logs</a><a href="#users">Users</a><a href="#logout">Logout</a></div><details class="theme-settings" id="pengaturan"><summary>⚙ Setting</summary><div class="theme-options" aria-label="Pilihan tema"><button class="theme-option" type="button" data-theme="terang">☀ Terang</button><button class="theme-option" type="button" data-theme="gelap">◐ Gelap</button><button class="theme-option" type="button" data-theme="biru">● Biru</button><button class="theme-option" type="button" data-theme="hijau">● Hijau</button><button class="theme-option" type="button" data-theme="ping">● Ping</button></div></details></div>
+        <div class="nav-group"><div class="nav-label">Keuangan &amp; Sistem</div><div class="nav-links"><a href="#keuangan">Finance &amp; Accounting</a><a href="#laporan">Laporan <small>New</small></a><a href="#payment">Payment Gateway</a><a href="#api">Login API Service</a><a href="#api-docs">Dokumentasi API <small>New</small></a><a href="#logs">Logs</a><a href="#users">Users</a><a href="#logout">Logout</a></div><details class="theme-settings" id="pengaturan"><summary>⚙ Setting</summary><div class="theme-options" aria-label="Pilihan tema"><button class="theme-option" type="button" data-theme="gelap">◐ Gelap</button><button class="theme-option" type="button" data-theme="biru">● Biru</button><button class="theme-option" type="button" data-theme="hijau">● Hijau</button><button class="theme-option" type="button" data-theme="ping">● Ping</button></div></details></div>
       </nav>
     </aside>
     <main class="main" id="dashboard">
@@ -159,10 +158,10 @@
     });
     const themeButtons = [...document.querySelectorAll('.theme-option')];
     const applyTheme = (theme) => {
-      const validThemes = ['terang', 'gelap', 'biru', 'hijau', 'ping'];
-      const selected = validThemes.includes(theme) ? theme : 'terang';
+      const validThemes = ['gelap', 'biru', 'hijau', 'ping'];
+      const selected = validThemes.includes(theme) ? theme : 'biru';
       document.body.classList.remove(...validThemes.map((name) => `theme-${name}`));
-      if (selected !== 'terang') document.body.classList.add(`theme-${selected}`);
+      document.body.classList.add(`theme-${selected}`);
       themeButtons.forEach((button) => {
         const active = button.dataset.theme === selected;
         button.classList.toggle('active', active);
@@ -172,7 +171,7 @@
       localStorage.setItem('billing-theme', selected);
     };
     themeButtons.forEach((button) => button.addEventListener('click', () => applyTheme(button.dataset.theme)));
-    applyTheme(localStorage.getItem('billing-theme') || 'terang');
+    applyTheme(localStorage.getItem('billing-theme') || 'biru');
     const menuButton = document.getElementById('menuButton');
     const sidebar = document.getElementById('mainSidebar');
     const setMenuState = (isOpen) => {
