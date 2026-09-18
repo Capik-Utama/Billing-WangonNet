@@ -69,18 +69,19 @@
       .intro { display: block; }
       .status { display: inline-block; margin-top: 12px; }
       .notice { font-size: 13px; }
-      .cards { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
-      .card { min-height: 170px; border-radius: 15px; }
-      .card-body { padding: 17px 9px 13px; }
-      .card-value { font-size: 20px; }
-      .card-label { font-size: 14px; }
-      .card-action { font-size: 13px; padding: 12px 5px; }
+      .cards { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
+      .card { min-height: 126px; border-radius: 11px; }
+      .card-body { padding: 12px 5px 9px; gap: 6px; }
+      .card-value { font-size: 16px; }
+      .card-label { font-size: 11px; }
+      .card-action { font-size: 10px; padding: 9px 2px; }
     }
     @media (max-width: 380px) {
-      .cards { gap: 9px; }
-      .card { min-height: 155px; }
-      .card-value { font-size: 18px; }
-      .card-label { font-size: 12px; }
+      .cards { gap: 5px; }
+      .card { min-height: 112px; }
+      .card-value { font-size: 14px; }
+      .card-label { font-size: 10px; }
+      .card-action { font-size: 9px; }
     }
   </style>
 </head>
@@ -103,14 +104,15 @@
     <main class="main" id="dashboard">
       <section class="cards" aria-label="Ringkasan dashboard">
         <article class="card" data-color><div class="card-body"><div class="card-value">745</div><div class="card-label">Data Pelanggan</div></div><a class="card-action" href="#pelanggan">Selengkapnya ➜</a></article>
-        <article class="card" data-color><div class="card-body"><div class="card-value">522 | Rp. ***</div><div class="card-label">Pelanggan Sudah Lunas</div></div><a class="card-action" href="#keuangan">Selengkapnya ➜</a></article>
         <article class="card" data-color><div class="card-body"><div class="card-value">142 | Rp. ***</div><div class="card-label">Pelanggan Belum Lunas</div></div><a class="card-action" href="#keuangan">Selengkapnya ➜</a></article>
+        <article class="card" data-color><div class="card-body"><div class="card-value">522 | Rp. ***</div><div class="card-label">Pelanggan Sudah Lunas</div></div><a class="card-action" href="#keuangan">Selengkapnya ➜</a></article>
         <article class="card" data-color><div class="card-body"><div class="card-value">745</div><div class="card-label">Buat Ticket Pelanggan</div></div><a class="card-action" href="#ticket">Selengkapnya ➜</a></article>
-        <article class="card" data-color><div class="card-body"><div class="card-value">0</div><div class="card-label">Ticket Pelanggan Closed</div></div><a class="card-action" href="#ticket">Selengkapnya ➜</a></article>
         <article class="card" data-color><div class="card-body"><div class="card-value">0</div><div class="card-label">Ticket Open</div></div><a class="card-action" href="#ticket">Selengkapnya ➜</a></article>
+        <article class="card" data-color><div class="card-body"><div class="card-value">0</div><div class="card-label">Ticket Closed</div></div><a class="card-action" href="#ticket">Selengkapnya ➜</a></article>
+        <article class="card" data-color><div class="card-body"><div class="card-value">Rp. *****</div><div class="card-label">Pemasukan Bulan Ini</div></div><a class="card-action" href="#keuangan">Selengkapnya ➜</a></article>
+        <article class="card" data-color><div class="card-body"><div class="card-value">Rp. *****</div><div class="card-label">Pengeluaran Bulan Ini</div></div><a class="card-action" href="#keuangan">Selengkapnya ➜</a></article>
         <article class="card" data-color><div class="card-body"><div class="card-value">0</div><div class="card-label">Ticket Pending</div></div><a class="card-action" href="#ticket">Selengkapnya ➜</a></article>
         <article class="card" data-color><div class="card-body"><div class="card-value">0</div><div class="card-label">Ticket Dalam Penanganan</div></div><a class="card-action" href="#ticket">Selengkapnya ➜</a></article>
-        <article class="card" data-color><div class="card-body"><div class="card-value">Rp. ***** | Rp. *****</div><div class="card-label">Pemasukan Bulan ini | Pemasukan Hari ini<br><br>Rp. *****<br>Pengeluaran Bulan ini<br><br>Rp. ***.***<br>Balance Bulan ini</div></div><a class="card-action" href="#keuangan">Selengkapnya ➜</a></article>
         <article class="card" data-color><div class="card-body"><div class="card-value">745<br><small>Status Langganan</small><br>717<br><small>Status On</small><br>28<br><small>Status Off</small></div></div><a class="card-action" href="#status">Selengkapnya ➜</a></article>
         <article class="card" data-color><div class="card-body"><div class="card-value">0</div><div class="card-label">Ticket Permintaan Aktivasi</div></div><a class="card-action" href="#ticket">Selengkapnya ➜</a></article>
         <article class="card" data-color><div class="card-body"><div class="card-value">—</div><div class="card-label">Status WAGW Beta Disconnected</div></div><a class="card-action" href="#pengaturan">Selengkapnya ➜</a></article>
