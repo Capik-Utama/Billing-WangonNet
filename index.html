@@ -258,6 +258,18 @@
       customerHead.querySelectorAll('.sort-header').forEach((button) => button.addEventListener('click', () => { const index=Number(button.dataset.sortIndex); if(sortIndex===index) sortDirection*=-1; else { sortIndex=index; sortDirection=1; } renderCustomers(); }));
     };
     const loadCustomers = async () => { try { const r=await fetch('/api/customers'); const data=await r.json(); if(!r.ok) throw new Error(data.error); customerHeaders=data.headers||[]; customers=data.sheetRows?.map((row) => ({sheet_row:row})) || data.customers||[]; renderCustomers(); } catch(e) { setCustomerStatus(e.message,true); } };
+    const dashboardPage = document.getElementById('dashboard');
+    const showDashboard = () => { customerPanel.hidden=true; dashboardPage.hidden=false; history.replaceState(null, '', '#dashboard'); };
+    const showCustomers = () => { dashboardPage.hidden=true; customerPanel.hidden=false; history.replaceState(null, '', '#pelanggan'); loadCustomers(); };
+    document.querySelectorAll('a[href="#pelanggan"]').forEach(a=>a.addEventListener('click',e=>{e.preventDefault();showCustomers();}));
+    document.querySelectorAll('a[href="#dashboard"]').forEach(a=>a.addEventListener('click',e=>{e.preventDefault();showDashboard();}));
+    const customerCard = document.getElementById('customerCard');
+    customerCard.addEventListener('click', (event) => { if (!event.target.closest('a')) showCustomers(); });
+    customerCard.addEventListener('keydown', (event) => { if ((event.key === 'Enter' || event.key === ' ') && !event.target.closest('a')) { event.preventDefault(); showCustomers(); } });
+    document.getElementById('backDashboard').addEventListener('click', showDashboard);
+    customerBody.addEventListener('click', (event) => { const button=event.target.closest('.row-action'); if (!button) return; const labels={edit:'Edit pelanggan',payment:'Pembayaran',activate:'Aktifkan pelanggan',deactivate:'Nonaktifkan pelanggan'}; setCustomerStatus(`${labels[button.dataset.action]}: aksi siap diproses untuk pelanggan ini.`); });
+    loadCustomers();
+    if (location.hash === '#pelanggan') showCustomers();
     const downloadText = (name, content, type) => { const a=document.createElement('a'); a.href=URL.createObjectURL(new Blob([content],{type})); a.download=name; a.click(); setTimeout(()=>URL.revokeObjectURL(a.href),1000); };
     const csvEscape = v => { const s=v??''; return /[",\n\r]/.test(s)?`"${String(s).replaceAll('"','""')}"`:s; };
     const exportCustomers = (name) => { const rows=[customerHeaders,...customers.map(customerRow)]; downloadText(name,rows.map(r=>r.map(csvEscape).join(',')).join('\r\n'),'text/csv;charset=utf-8'); };
