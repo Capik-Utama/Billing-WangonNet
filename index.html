@@ -77,9 +77,10 @@
       font-size: 12px;
     }
 
-    .brand h1 {
+    .brand-title {
       margin: 8px 0 0;
       font-size: 26px;
+      font-weight: 700;
     }
 
     .sidebar-section {
@@ -118,7 +119,7 @@
       margin-bottom: 24px;
     }
 
-    .topbar h2,
+    .topbar h1,
     .section-heading {
       margin: 0;
     }
@@ -252,7 +253,7 @@
     <aside class="sidebar">
       <div class="brand">
         <small>Struktur Utama</small>
-        <h1>Billing WangonNet</h1>
+        <div class="brand-title">Billing WangonNet</div>
       </div>
 
       <div class="sidebar-section">
@@ -288,7 +289,7 @@
           <a href="#voucher-operasional">Voucher</a>
           <a href="#transaksi">Transaksi</a>
           <a href="#payment-gateway">Payment Gateway</a>
-          <a href="#apk-android">Apk Android</a>
+          <a href="#apk-android">APK Android</a>
         </nav>
       </div>
 
@@ -316,16 +317,16 @@
     </aside>
 
     <main class="content">
-      <header class="topbar" id="dashboard">
+      <header class="topbar">
         <div>
-          <h2>Dashboard Utama eBilling</h2>
+          <h1>Dashboard Utama eBilling</h1>
           <p>Kerangka awal untuk pengembangan bertahap fitur Billing WangonNet.</p>
         </div>
         <div class="badge">Versi awal struktur utama</div>
       </header>
 
       <section class="overview">
-        <h3 class="section-heading">Ringkasan cepat</h3>
+        <h2 class="section-heading">Ringkasan cepat</h2>
         <p>Halaman ini menyiapkan menu, blok dashboard, dan area modul utama agar pengembangan berikutnya bisa dilakukan secara bertahap.</p>
         <div class="overview-grid">
           <div class="card">
@@ -352,9 +353,9 @@
       </section>
 
       <div class="section-list">
-        <section class="section-block">
+        <section class="section-block" id="dashboard">
           <div class="section-header">
-            <h3 class="section-heading">Dashboard</h3>
+            <h2 class="section-heading">Dashboard</h2>
             <p class="section-intro">Kumpulan dashboard utama yang meniru struktur navigasi eBilling untuk kebutuhan monitoring.</p>
           </div>
           <div class="feature-grid">
@@ -395,7 +396,7 @@
 
         <section class="section-block" id="manajemen-data">
           <div class="section-header">
-            <h3 class="section-heading">Manajemen Data</h3>
+            <h2 class="section-heading">Manajemen Data</h2>
             <p class="section-intro">Area pengelolaan data inti pelanggan dan sistem jaringan.</p>
           </div>
           <div class="feature-grid">
@@ -439,7 +440,7 @@
 
         <section class="section-block" id="operasional">
           <div class="section-header">
-            <h3 class="section-heading">Operasional</h3>
+            <h2 class="section-heading">Operasional</h2>
             <p class="section-intro">Modul proses harian untuk layanan pelanggan dan transaksi.</p>
           </div>
           <div class="feature-grid">
@@ -460,7 +461,7 @@
               <p>Placeholder untuk koneksi pembayaran otomatis.</p>
             </article>
             <article class="panel" id="apk-android">
-              <strong>Apk Android</strong>
+              <strong>APK Android</strong>
               <p>Area dokumentasi integrasi dan distribusi aplikasi mobile.</p>
             </article>
           </div>
@@ -468,7 +469,7 @@
 
         <section class="section-block" id="keuangan">
           <div class="section-header">
-            <h3 class="section-heading">Keuangan &amp; Laporan</h3>
+            <h2 class="section-heading">Keuangan &amp; Laporan</h2>
             <p class="section-intro">Blok utama untuk pengelolaan keuangan dan analisis bisnis.</p>
           </div>
           <div class="feature-grid">
@@ -493,7 +494,7 @@
 
         <section class="section-block" id="sistem">
           <div class="section-header">
-            <h3 class="section-heading">API &amp; Sistem</h3>
+            <h2 class="section-heading">API &amp; Sistem</h2>
             <p class="section-intro">Pusat akses integrasi, pengaturan, dan administrasi aplikasi.</p>
           </div>
           <div class="feature-grid">
