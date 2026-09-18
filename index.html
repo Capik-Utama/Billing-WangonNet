@@ -1,0 +1,607 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Billing WangonNet</title>
+  <style>
+    :root {
+      color-scheme: light;
+      --bg: #f3f6fb;
+      --surface: #ffffff;
+      --surface-alt: #0f172a;
+      --surface-muted: #e2e8f0;
+      --text: #0f172a;
+      --text-muted: #64748b;
+      --primary: #2563eb;
+      --primary-soft: #dbeafe;
+      --success: #16a34a;
+      --warning: #d97706;
+      --border: #dbe2ea;
+      --shadow: 0 18px 40px rgba(15, 23, 42, 0.08);
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      font-family: Arial, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+    }
+
+    a {
+      color: inherit;
+      text-decoration: none;
+    }
+
+    .app-shell {
+      min-height: 100vh;
+      display: grid;
+      grid-template-columns: 280px 1fr;
+    }
+
+    .sidebar {
+      padding: 24px 20px;
+      background: var(--surface-alt);
+      color: #fff;
+      position: sticky;
+      top: 0;
+      height: 100vh;
+      overflow-y: auto;
+    }
+
+    .brand {
+      margin-bottom: 24px;
+      padding-bottom: 20px;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    }
+
+    .brand small,
+    .sidebar-section-label,
+    .section-subtitle,
+    .card p,
+    .panel p,
+    .overview p {
+      color: var(--text-muted);
+    }
+
+    .brand small,
+    .sidebar-section-label {
+      color: rgba(226, 232, 240, 0.8);
+      display: block;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+      font-size: 12px;
+    }
+
+    .brand-title {
+      margin: 8px 0 0;
+      font-size: 26px;
+      font-weight: 700;
+    }
+
+    .sidebar-section {
+      margin-bottom: 22px;
+    }
+
+    .sidebar-nav {
+      display: grid;
+      gap: 22px;
+    }
+
+    .sidebar-links {
+      display: grid;
+      gap: 8px;
+      margin-top: 10px;
+    }
+
+    .sidebar a {
+      display: block;
+      padding: 10px 12px;
+      border-radius: 12px;
+      border: 1px solid transparent;
+      color: rgba(255, 255, 255, 0.92);
+      font-size: 14px;
+    }
+
+    .sidebar a:hover {
+      background: rgba(37, 99, 235, 0.2);
+    }
+
+    .sidebar a:focus,
+    .sidebar a:focus-visible {
+      background: rgba(37, 99, 235, 0.2);
+      outline: 2px solid #93c5fd;
+      outline-offset: 2px;
+    }
+
+    .sidebar a[aria-current="page"] {
+      background: rgba(37, 99, 235, 0.3);
+      font-weight: 700;
+      border-color: rgba(147, 197, 253, 0.65);
+    }
+
+    .overview:target,
+    .section-block:target,
+    .panel:target,
+    .logout-action:target {
+      border-color: var(--primary);
+      box-shadow: 0 0 0 3px var(--primary-soft), var(--shadow);
+    }
+
+    .content {
+      padding: 28px;
+    }
+
+    .topbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      margin-bottom: 24px;
+    }
+
+    .topbar h1,
+    .section-heading {
+      margin: 0;
+    }
+
+    .topbar p,
+    .section-intro,
+    .badge {
+      margin: 6px 0 0;
+      color: var(--text-muted);
+    }
+
+    .badge {
+      padding: 10px 14px;
+      border-radius: 999px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      white-space: nowrap;
+    }
+
+    .overview,
+    .section-block {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 24px;
+      box-shadow: var(--shadow);
+    }
+
+    .overview {
+      padding: 28px;
+      margin-bottom: 24px;
+    }
+
+    .overview-grid,
+    .feature-grid {
+      display: grid;
+      gap: 16px;
+    }
+
+    .overview-grid {
+      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+      margin-top: 22px;
+    }
+
+    .feature-grid {
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    }
+
+    .card,
+    .panel {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 18px;
+      padding: 18px;
+    }
+
+    .card strong,
+    .panel strong {
+      display: block;
+      margin-bottom: 6px;
+      font-size: 18px;
+    }
+
+    .status {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 6px 10px;
+      border-radius: 999px;
+      font-size: 12px;
+      font-weight: 700;
+      margin-top: 10px;
+    }
+
+    .status.success {
+      color: var(--success);
+      background: #dcfce7;
+    }
+
+    .status.warning {
+      color: var(--warning);
+      background: #ffedd5;
+    }
+
+    .section-list {
+      display: grid;
+      gap: 24px;
+    }
+
+    .section-block {
+      padding: 24px;
+      scroll-margin-top: 24px;
+    }
+
+    .section-header {
+      margin-bottom: 18px;
+    }
+
+    .panel {
+      background: linear-gradient(180deg, #fff, #f8fafc);
+    }
+
+    .panel ul {
+      margin: 12px 0 0;
+      padding-left: 18px;
+      color: var(--text-muted);
+    }
+
+    .logout-action {
+      display: block;
+      margin-top: 24px;
+      padding: 20px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 24px;
+      box-shadow: var(--shadow);
+    }
+
+    .logout-action strong {
+      display: block;
+      margin-bottom: 6px;
+      font-size: 18px;
+    }
+
+    .logout-action span {
+      color: var(--text-muted);
+    }
+
+    @media (max-width: 960px) {
+      .app-shell {
+        grid-template-columns: 1fr;
+      }
+
+      .sidebar {
+        position: static;
+        height: auto;
+      }
+
+      .content {
+        padding: 20px;
+      }
+
+      .topbar {
+        flex-direction: column;
+        align-items: flex-start;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="app-shell">
+    <aside class="sidebar">
+      <div class="brand">
+        <small>Struktur Utama</small>
+        <h2 class="brand-title">Billing WangonNet</h2>
+      </div>
+
+      <nav class="sidebar-nav" aria-label="Navigasi utama sidebar">
+        <div class="sidebar-section">
+          <span class="sidebar-section-label">Dashboard</span>
+          <div class="sidebar-links">
+            <a href="#dashboard-overview">Ringkasan Dashboard</a>
+            <a href="#dashboard-section">Bagian Dashboard</a>
+            <a href="#dashboard">Dashboard utama</a>
+            <a href="#dashboard-cabang">Dashboard Cabang</a>
+            <a href="#dashboard-sales">Dashboard Sales</a>
+            <a href="#dashboard-mitra">Dashboard Mitra</a>
+            <a href="#dashboard-grafik">Dashboard Grafik</a>
+            <a href="#dashboard-ppob">Dashboard PPOB</a>
+            <a href="#dashboard-voucher">Dashboard Voucher</a>
+            <a href="#dashboard-mapping">Dashboard Mapping</a>
+            <a href="#dashboard-income-summary">Income Summary Dashboard</a>
+          </div>
+        </div>
+
+        <div class="sidebar-section">
+          <span class="sidebar-section-label">Manajemen Data</span>
+          <div class="sidebar-links">
+            <a href="#manajemen-data">Bagian Manajemen Data</a>
+            <a href="#kelola-data">Kelola Data</a>
+            <a href="#kelola-data-corporate">Kelola Data Corporate</a>
+            <a href="#poin-pelanggan">Poin Pelanggan</a>
+            <a href="#management-mikrotik">Management Mikrotik</a>
+            <a href="#data-pelanggan-status">Data pelanggan &amp; status</a>
+          </div>
+        </div>
+
+        <div class="sidebar-section">
+          <span class="sidebar-section-label">Operasional</span>
+          <div class="sidebar-links">
+            <a href="#operasional">Bagian Operasional</a>
+            <a href="#ticket-pelanggan">Tiket pelanggan</a>
+            <a href="#voucher-operasional">Voucher</a>
+            <a href="#transaksi">Transaksi</a>
+            <a href="#payment-gateway">Payment Gateway</a>
+            <a href="#apk-android">APK Android</a>
+          </div>
+        </div>
+
+        <div class="sidebar-section">
+          <span class="sidebar-section-label">Keuangan &amp; Laporan</span>
+          <div class="sidebar-links">
+            <a href="#keuangan">Bagian Keuangan &amp; Laporan</a>
+            <a href="#finance-accounting">Finance &amp; Accounting</a>
+            <a href="#laporan">Laporan</a>
+            <a href="#income-summary">Income Summary</a>
+            <a href="#arus-kas">Pemasukan, pengeluaran, balance</a>
+          </div>
+        </div>
+
+        <div class="sidebar-section">
+          <span class="sidebar-section-label">API &amp; Sistem</span>
+          <div class="sidebar-links">
+            <a href="#sistem">Bagian API &amp; Sistem</a>
+            <a href="#login-api-service">Login API Service</a>
+            <a href="#dokumentasi-api">Dokumentasi API</a>
+            <a href="#logs">Logs</a>
+            <a href="#setting">Setting</a>
+            <a href="#users">Users</a>
+            <a href="#logout">Informasi Logout</a>
+          </div>
+        </div>
+      </nav>
+    </aside>
+
+    <main class="content">
+      <header class="topbar">
+        <div>
+          <h1>Dashboard Utama eBilling</h1>
+          <p>Kerangka awal untuk pengembangan bertahap fitur Billing WangonNet.</p>
+        </div>
+        <p class="badge">Versi awal struktur utama</p>
+      </header>
+
+      <section class="overview" id="dashboard-overview">
+        <h2 class="section-heading">Ringkasan cepat</h2>
+        <p>Halaman ini menyiapkan menu, blok dashboard, dan area modul utama agar pengembangan berikutnya bisa dilakukan secara bertahap.</p>
+        <div class="overview-grid">
+          <div class="card">
+            <strong>10 Navigasi Dashboard</strong>
+            <p>Ringkasan, utama, cabang, sales, mitra, grafik, PPOB, voucher, mapping, dan income summary.</p>
+            <span class="status success">Siap dikembangkan</span>
+          </div>
+          <div class="card">
+            <strong>5 Modul Data</strong>
+            <p>Fokus pada data pelanggan, corporate, poin, integrasi Mikrotik, dan status langganan.</p>
+            <span class="status success">Struktur tersedia</span>
+          </div>
+          <div class="card">
+            <strong>5 Modul Operasional</strong>
+            <p>Tiket, voucher, transaksi, payment gateway, dan APK Android.</p>
+            <span class="status warning">Butuh implementasi lanjutan</span>
+          </div>
+          <div class="card">
+            <strong>4 Modul Keuangan</strong>
+            <p>Area khusus untuk accounting, laporan, income summary, pemasukan, pengeluaran, dan balance.</p>
+            <span class="status success">Blok tersedia</span>
+          </div>
+        </div>
+      </section>
+
+      <div class="section-list">
+        <section class="section-block" id="dashboard-section">
+          <div class="section-header">
+            <h2 class="section-heading">Dashboard</h2>
+            <p class="section-intro">Kumpulan dashboard utama yang meniru struktur navigasi eBilling untuk kebutuhan monitoring.</p>
+          </div>
+          <div class="feature-grid">
+            <article class="panel" id="dashboard">
+              <strong>Dashboard utama</strong>
+              <p>Titik masuk utama untuk statistik pelanggan, transaksi, dan ringkasan operasional.</p>
+            </article>
+            <article class="panel" id="dashboard-cabang">
+              <strong>Dashboard Cabang</strong>
+              <p>Monitoring performa per cabang dan distribusi pelanggan.</p>
+            </article>
+            <article class="panel" id="dashboard-sales">
+              <strong>Dashboard Sales</strong>
+              <p>Ringkasan akuisisi, follow up, dan capaian tim sales.</p>
+            </article>
+            <article class="panel" id="dashboard-mitra">
+              <strong>Dashboard Mitra</strong>
+              <p>Menampilkan kontribusi dan performa partner atau reseller.</p>
+            </article>
+            <article class="panel" id="dashboard-grafik">
+              <strong>Dashboard Grafik</strong>
+              <p>Area visualisasi tren pelanggan, omzet, dan aktivitas layanan.</p>
+            </article>
+            <article class="panel" id="dashboard-ppob">
+              <strong>Dashboard PPOB</strong>
+              <p>Slot khusus untuk ringkasan transaksi PPOB.</p>
+            </article>
+            <article class="panel" id="dashboard-voucher">
+              <strong>Dashboard Voucher</strong>
+              <p>Ringkasan performa voucher internet dan distribusinya.</p>
+            </article>
+            <article class="panel" id="dashboard-mapping">
+              <strong>Dashboard Mapping</strong>
+              <p>Pemetaan pelanggan, area layanan, dan titik jaringan.</p>
+            </article>
+            <article class="panel" id="dashboard-income-summary">
+              <strong>Income Summary Dashboard</strong>
+              <p>Ringkasan pemasukan dalam konteks dashboard untuk pemantauan cepat.</p>
+            </article>
+          </div>
+        </section>
+
+        <section class="section-block" id="manajemen-data">
+          <div class="section-header">
+            <h2 class="section-heading">Manajemen Data</h2>
+            <p class="section-intro">Area pengelolaan data inti pelanggan dan sistem jaringan.</p>
+          </div>
+          <div class="feature-grid">
+            <article class="panel" id="kelola-data">
+              <strong>Kelola Data</strong>
+              <ul>
+                <li>Master data pelanggan</li>
+                <li>Validasi status layanan</li>
+              </ul>
+            </article>
+            <article class="panel" id="kelola-data-corporate">
+              <strong>Kelola Data Corporate</strong>
+              <ul>
+                <li>Data pelanggan bisnis</li>
+                <li>Segmentasi layanan corporate</li>
+              </ul>
+            </article>
+            <article class="panel" id="poin-pelanggan">
+              <strong>Poin Pelanggan</strong>
+              <ul>
+                <li>Skema loyalti dan reward</li>
+                <li>Riwayat penukaran poin</li>
+              </ul>
+            </article>
+            <article class="panel" id="management-mikrotik">
+              <strong>Management Mikrotik</strong>
+              <ul>
+                <li>Integrasi perangkat</li>
+                <li>Status sinkronisasi router</li>
+              </ul>
+            </article>
+            <article class="panel" id="data-pelanggan-status">
+              <strong>Data pelanggan &amp; status langganan</strong>
+              <ul>
+                <li>Aktif, nonaktif, isolir</li>
+                <li>Monitoring masa aktif layanan</li>
+              </ul>
+            </article>
+          </div>
+        </section>
+
+        <section class="section-block" id="operasional">
+          <div class="section-header">
+            <h2 class="section-heading">Operasional</h2>
+            <p class="section-intro">Modul proses harian untuk layanan pelanggan dan transaksi.</p>
+          </div>
+          <div class="feature-grid">
+            <article class="panel" id="ticket-pelanggan">
+              <strong>Tiket pelanggan</strong>
+              <p>Penanganan keluhan, gangguan, dan tindak lanjut support.</p>
+            </article>
+            <article class="panel" id="voucher-operasional">
+              <strong>Voucher</strong>
+              <p>Pengelolaan voucher internet, kode akses, dan distribusi.</p>
+            </article>
+            <article class="panel" id="transaksi">
+              <strong>Transaksi</strong>
+              <p>Riwayat pembayaran dan aktivitas penagihan.</p>
+            </article>
+            <article class="panel" id="payment-gateway">
+              <strong>Payment Gateway</strong>
+              <p>Placeholder untuk koneksi pembayaran otomatis.</p>
+            </article>
+            <article class="panel" id="apk-android">
+              <strong>APK Android</strong>
+              <p>Area dokumentasi integrasi dan distribusi aplikasi mobile.</p>
+            </article>
+          </div>
+        </section>
+
+        <section class="section-block" id="keuangan">
+          <div class="section-header">
+            <h2 class="section-heading">Keuangan &amp; Laporan</h2>
+            <p class="section-intro">Blok utama untuk pengelolaan keuangan dan analisis bisnis.</p>
+          </div>
+          <div class="feature-grid">
+            <article class="panel" id="finance-accounting">
+              <strong>Finance &amp; Accounting</strong>
+              <p>Ruang untuk pencatatan jurnal, invoice, dan kontrol keuangan.</p>
+            </article>
+            <article class="panel" id="laporan">
+              <strong>Laporan</strong>
+              <p>Rekap pelanggan, penagihan, dan operasional dalam satu menu.</p>
+            </article>
+            <article class="panel" id="income-summary">
+              <strong>Income Summary</strong>
+              <p>Ringkasan pemasukan berkala untuk pemantauan performa bisnis.</p>
+            </article>
+            <article class="panel" id="arus-kas">
+              <strong>Pemasukan, pengeluaran, dan balance</strong>
+              <p>Struktur awal cashflow yang bisa dipisah per cabang atau periode.</p>
+            </article>
+          </div>
+        </section>
+
+        <section class="section-block" id="sistem">
+          <div class="section-header">
+            <h2 class="section-heading">API &amp; Sistem</h2>
+            <p class="section-intro">Pusat akses integrasi, pengaturan, dan administrasi aplikasi.</p>
+          </div>
+          <div class="feature-grid">
+            <article class="panel" id="login-api-service">
+              <strong>Login API Service</strong>
+              <p>Tempat pengaturan autentikasi dan token layanan API.</p>
+            </article>
+            <article class="panel" id="dokumentasi-api">
+              <strong>Dokumentasi API</strong>
+              <p>Daftar endpoint dan panduan integrasi untuk layanan eksternal.</p>
+            </article>
+            <article class="panel" id="logs">
+              <strong>Logs</strong>
+              <p>Riwayat aktivitas sistem, integrasi, dan audit trail.</p>
+            </article>
+            <article class="panel" id="setting">
+              <strong>Setting</strong>
+              <p>Konfigurasi umum aplikasi, penagihan, dan preferensi sistem.</p>
+            </article>
+            <article class="panel" id="users">
+              <strong>Users</strong>
+              <p>Pengelolaan hak akses admin, operator, sales, dan mitra.</p>
+            </article>
+          </div>
+        </section>
+      </div>
+
+      <section class="logout-action" id="logout" aria-label="Placeholder informasi logout">
+        <strong>Informasi Logout</strong>
+        <span>Placeholder dokumentasi alur logout untuk struktur awal aplikasi.</span>
+      </section>
+    </main>
+  </div>
+  <script>
+    const sidebarLinks = Array.from(document.querySelectorAll('.sidebar a[href^="#"]'));
+
+    function setCurrentLink() {
+      const activeHash = window.location.hash || '#dashboard-overview';
+
+      sidebarLinks.forEach((link) => {
+        if (link.getAttribute('href') === activeHash) {
+          link.setAttribute('aria-current', 'page');
+        } else {
+          link.removeAttribute('aria-current');
+        }
+      });
+    }
+
+    window.addEventListener('hashchange', setCurrentLink);
+    setCurrentLink();
+  </script>
+</body>
+</html>
