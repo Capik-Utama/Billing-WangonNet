@@ -54,9 +54,10 @@ function syncBillingChanges() {
   const values = sheet.getDataRange().getValues();
   const headers = values[0];
   const rowByCode = {};
-  values.slice(1).forEach((row, index) => { if (row[2]) rowByCode[String(row[2])] = index + 2; });
+  const rowBySourceNo = {};
+  values.slice(1).forEach((row, index) => { if (row[2]) rowByCode[String(row[2])] = index + 2; if (row[0] !== '') rowBySourceNo[String(row[0])] = index + 2; });
   (payload.customers || []).forEach(customer => {
-    const rowNumber = rowByCode[String(customer.customer_code)];
+    const rowNumber = rowByCode[String(customer.customer_code)] || rowBySourceNo[String(customer.source_no)];
     if (!rowNumber) return;
     const row = sheet.getRange(rowNumber, 1, 1, headers.length).getValues()[0];
     const updates = { 1: customer.source_no, 2: customer.name, 3: customer.customer_code, 4: customer.branch_code, 5: customer.area_code, 6: customer.package_name, 7: customer.sales_name, 8: customer.national_id, 9: customer.phone, 10: customer.email, 11: customer.whatsapp, 12: customer.address, 13: customer.rt, 14: customer.rw, 15: customer.village, 16: customer.district, 17: customer.city_regency, 18: customer.latitude, 19: customer.longitude, 41: customer.join_date, 42: customer.billing_day, 43: customer.status, 44: customer.active_period };

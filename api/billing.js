@@ -1,27 +1,27 @@
 'use strict';
-const { buildBilling } = require('../lib/billing');
+const { buildBillingFromRecords } = require('../lib/billing');
 
-function parseCsv(input) {
-  const rows = [];
-  let row = [], cell = '', quoted = false;
-  for (let index = 0; index < input.length; index += 1) {
-    const character = input[index], next = input[index + 1];
-    if (character === '"' && quoted && next === '"') { cell += '"'; index += 1; continue; }
-    if (character === '"') { quoted = !quoted; continue; }
-    if (character === ',' && !quoted) { row.push(cell); cell = ''; continue; }
-    if ((character === '\n' || character === '\r') && !quoted) { if (character === '\r' && next === '\n') index += 1; row.push(cell); if (row.some((value) => value !== '')) rows.push(row); row = []; cell = ''; continue; }
-    cell += character;
-  }
-  if (cell || row.length) { row.push(cell); rows.push(row); }
-  return rows;
+const SUPABASE_URL = process.env.SUPABASE_URL;
+const SUPABASE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_SECRET_KEY;
+
+async function supabase(path) {
+  if (!SUPABASE_URL || !SUPABASE_KEY) throw new Error('Konfigurasi Supabase billing belum lengkap');
+  const response = await fetch(`${SUPABASE_URL}/rest/v1/${path}`, {
+    headers: { apikey: SUPABASE_KEY, Authorization: `Bearer ${SUPABASE_KEY}` },
+  });
+  const text = await response.text();
+  let body;
+  try { body = JSON.parse(text); } catch { body = text; }
+  if (!response.ok) throw new Error(body?.message || body?.hint || `Supabase HTTP ${response.status}`);
+  return body;
 }
 
-async function spreadsheetCustomers() {
-  const sheetId = process.env.GOOGLE_SHEET_ID || '1g2GzzTF214d2-duyuriun-gIGgeHtcxFnXOQO2d4Drg';
-  const gid = process.env.GOOGLE_SHEET_CUSTOMERS_GID || '1539527690';
-  const response = await fetch(`https://docs.google.com/spreadsheets/d/${sheetId}/export?format=csv&gid=${gid}`);
-  if (!response.ok) throw new Error(`Spreadsheet pelanggan tidak dapat diakses (${response.status})`);
-  return parseCsv(await response.text());
+async function billingRecords() {
+  const select = [
+    'source_no,name,customer_code,branch_code,area_code,package_name,phone,whatsapp,address,latitude,longitude,join_date,billing_day,status,active_period,raw_record',
+    'customer_network(pppoe_username,onu_serial,olt,pon,odp_code,odp_port,modem_type,mac_address,ip_address)',
+  ].join(',');
+  return supabase(`customers?select=${encodeURIComponent(select)}&order=source_no.asc&limit=1000`);
 }
 
 module.exports = async function handler(req, res) {
@@ -29,7 +29,7 @@ module.exports = async function handler(req, res) {
   res.setHeader('Cache-Control', 'no-store');
   if (req.method !== 'GET') { res.statusCode = 405; return res.end(JSON.stringify({ error: 'Method tidak diizinkan' })); }
   try {
-    const billing = buildBilling(await spreadsheetCustomers());
+    const billing = buildBillingFromRecords(await billingRecords());
     const url = new URL(req.url, 'http://localhost');
     const customerCode = url.searchParams.get('customer');
     if (customerCode) {
@@ -43,3 +43,5 @@ module.exports = async function handler(req, res) {
     return res.end(JSON.stringify({ error: error.message }));
   }
 };
+
+module.exports._test = { billingRecords };

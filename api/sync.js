@@ -45,7 +45,10 @@ async function upsertSource(sheet, headers, row, rowNumber) {
   const sourceId = source[0]?.id;
   if (sheet === 'pelanggan') {
     const customer = customerRecord(headers, row, rowNumber); customer.source_row_id = sourceId;
-    const saved = await sb('customers?on_conflict=customer_code', { method: 'POST', body: JSON.stringify(customer) });
+    const existing = await sb(`customers?source_no=eq.${encodeURIComponent(customer.source_no)}&select=id&limit=1`);
+    const saved = existing[0]
+      ? await sb(`customers?id=eq.${encodeURIComponent(existing[0].id)}`, { method: 'PATCH', body: JSON.stringify(customer) })
+      : await sb('customers?on_conflict=customer_code', { method: 'POST', body: JSON.stringify(customer) });
     const id = saved[0]?.id;
     if (id) await sb('customer_network?on_conflict=customer_id', { method: 'POST', body: JSON.stringify({ ...networkRecord(headers, row), customer_id: id }) });
   } else if (sheet === 'Paket') await sb('internet_packages?on_conflict=branch_code,package_code', { method: 'POST', body: JSON.stringify({ ...packageRecord(headers, row), source_row_id: sourceId }) });
