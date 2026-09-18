@@ -126,7 +126,7 @@
     .page-view[hidden] { display: none; }
     .customer-panel { margin-top: 0; }
     .customer-panel .customer-head { align-items: center; }
-    .customer-table { min-width: 760px; }
+    .customer-table { min-width: 930px; }
     .customer-table th:last-child, .customer-table td:last-child { width: 154px; text-align: right; }
     .row-actions { display: inline-flex; align-items: center; justify-content: flex-end; gap: 4px; }
     .row-action { width: 30px; height: 30px; padding: 0; border: 1px solid var(--line); border-radius: 7px; background: #f8fbff; color: var(--ink); cursor: pointer; font-size: 15px; line-height: 1; }
@@ -247,8 +247,8 @@
     const setCustomerStatus = (text, error=false) => { customerStatus.textContent=text; customerStatus.style.color=error?'#b42318':'var(--muted)'; };
     const renderCustomers = () => {
       customerCount.textContent=customers.length.toLocaleString('id-ID'); customerSubtitle.textContent=`${customers.length.toLocaleString('id-ID')} pelanggan tersimpan di billing`;
-      customerHead.innerHTML='<tr>'+['Cabang','Nama','No HP','Alamat','Status','Aksi'].map(h=>`<th>${h}</th>`).join('')+'</tr>';
-      customerBody.innerHTML=customers.map(c=>`<tr><td>${c.branch_code??''}</td><td>${c.name??''}</td><td>${c.phone??c.whatsapp??''}</td><td>${c.address??''}</td><td>${c.status??''}</td><td><span class="row-actions"><button type="button" class="row-action" data-action="edit" title="Edit pelanggan" aria-label="Edit pelanggan">✎</button><button type="button" class="row-action" data-action="payment" title="Pembayaran" aria-label="Pembayaran">▣</button><button type="button" class="row-action" data-action="activate" title="Aktifkan pelanggan" aria-label="Aktifkan pelanggan">✓</button><button type="button" class="row-action" data-action="deactivate" title="Nonaktifkan pelanggan" aria-label="Nonaktifkan pelanggan">⏻</button></span></td></tr>`).join(''); customerEmpty.hidden=customers.length>0;
+      customerHead.innerHTML='<tr>'+['No','ID Pelanggan','Nama','No HP','Alamat','PPP Secret','Status','Aksi'].map(h=>`<th>${h}</th>`).join('')+'</tr>';
+      customerBody.innerHTML=customers.map(c=>{ const pppSecret=c.pppoe_secret||c.ppp_secret||c.pppoe_password; const pppDisplay=pppSecret?'••••••':'—'; return `<tr><td>${c.source_no??''}</td><td>${c.customer_code??''}</td><td>${c.name??''}</td><td>${c.phone??c.whatsapp??''}</td><td>${c.address??''}</td><td title="PPP Secret disamarkan demi keamanan">${pppDisplay}</td><td>${c.status??''}</td><td><span class="row-actions"><button type="button" class="row-action" data-action="edit" title="Edit pelanggan" aria-label="Edit pelanggan">✎</button><button type="button" class="row-action" data-action="payment" title="Pembayaran" aria-label="Pembayaran">▣</button><button type="button" class="row-action" data-action="activate" title="Aktifkan pelanggan" aria-label="Aktifkan pelanggan">✓</button><button type="button" class="row-action" data-action="deactivate" title="Nonaktifkan pelanggan" aria-label="Nonaktifkan pelanggan">⏻</button></span></td></tr>`; }).join(''); customerEmpty.hidden=customers.length>0;
     };
     const loadCustomers = async () => { try { const r=await fetch('/api/customers'); const data=await r.json(); if(!r.ok) throw new Error(data.error); customerHeaders=data.headers||[]; customers=data.customers||[]; renderCustomers(); } catch(e) { setCustomerStatus(e.message,true); } };
     const dashboardPage = document.getElementById('dashboard');
