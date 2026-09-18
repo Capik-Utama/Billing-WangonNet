@@ -124,6 +124,19 @@
     }
 
     .page-view[hidden] { display: none; }
+    .sheet-panel[hidden] { display:none; }
+    .sheet-panel { margin-top:24px; background:#fff; border:1px solid var(--line); border-radius:16px; box-shadow:var(--shadow); padding:clamp(16px,3vw,24px); }
+    .sheet-panel-head { display:flex; align-items:center; gap:14px; margin-bottom:16px; }
+    .sheet-panel-head h2 { margin:0; font-size:clamp(20px,3vw,28px); }
+    .sheet-panel-subtitle { color:var(--muted); margin:5px 0 0; }
+    .sheet-table-wrap { overflow:auto; border:1px solid var(--line); border-radius:11px; }
+    .sheet-table { border-collapse:collapse; min-width:900px; width:100%; font-size:13px; }
+    .sheet-table th,.sheet-table td { padding:10px 11px; border-bottom:1px solid #e6eef8; text-align:left; white-space:nowrap; max-width:360px; }
+    .sheet-table th { background:#eef6ff; position:sticky; top:0; z-index:1; }
+    .sheet-table tr:hover td { background:#f8fbff; }
+    .sheet-sort { border:0; background:transparent; color:var(--ink); font:inherit; font-weight:800; cursor:pointer; padding:0; white-space:nowrap; }
+    .sheet-sort:hover,.sheet-sort:focus-visible { color:var(--accent); outline:2px solid var(--accent); outline-offset:2px; }
+
     .customer-panel { margin-top: 0; }
     .customer-panel .customer-head { align-items: center; }
     .customer-table { min-width: 1200px; }
@@ -179,7 +192,7 @@
       <div class="brand"><small>Dashboard administrator</small><strong>WangonNet</strong></div>
       <nav>
         <div class="nav-group"><div class="nav-label">Dashboard</div><div class="nav-links"><a href="#dashboard" aria-current="page">Dashboard</a><a href="#dashboard-mitra">Dashboard Mitra</a><a href="#dashboard-voucher">Dashboard Voucher</a><a href="#dashboard-mapping">Dashboard Mapping</a></div></div>
-        <details class="nav-group nav-folder"><summary class="nav-label">Kelola Data</summary><div class="nav-links"><a href="#pelanggan">Data Pelanggan</a><a href="#kartu-member">Data Kartu Member</a><a href="#perusahaan">Data Perusahaan</a><a href="#tipe-pembayaran">Data Tipe Pembayaran</a><a href="#notifikasi">Data Notifikasi</a><a href="#router">Data Router</a><a href="#rekening">Data Rekening</a></div></details>
+        <details class="nav-group nav-folder"><summary class="nav-label">Kelola Data</summary><div class="nav-links"><a href="#pelanggan">Data Pelanggan</a><a href="#paket">Data Paket</a><a href="#area">Data Area</a><a href="#odp">Data ODP</a><a href="#kartu-member">Data Kartu Member</a><a href="#perusahaan">Data Perusahaan</a><a href="#tipe-pembayaran">Data Tipe Pembayaran</a><a href="#notifikasi">Data Notifikasi</a><a href="#router">Data Router</a><a href="#rekening">Data Rekening</a></div></details>
         <div class="nav-group"><div class="nav-links"><a href="#voucher">Voucher</a><a href="#laporan">Laporan</a><a href="#users">User</a></div><details class="theme-settings" id="tema"><summary>🎨 Tema</summary><div class="theme-options" aria-label="Pilihan tema"><button class="theme-option" type="button" data-theme="biru">● Biru</button><button class="theme-option" type="button" data-theme="hijau">● Hijau</button><button class="theme-option" type="button" data-theme="ping">● Pink</button><button class="theme-option" type="button" data-theme="gelap">◐ Gelap</button></div></details><div class="nav-links"><a href="#logout">Logout</a></div></div>
       </nav>
     </aside>
@@ -211,6 +224,11 @@
         </div>
         <div class="customer-status" id="customerStatus" role="status"></div>
         <div class="customer-table-wrap"><table class="customer-table"><thead id="customerHead"></thead><tbody id="customerBody"></tbody></table><div class="empty-customers" id="customerEmpty" hidden>Tidak ada data pelanggan.</div></div>
+      </section>
+      <section class="sheet-panel" id="sheetPanel" hidden aria-labelledby="sheetTitle">
+        <div class="sheet-panel-head"><button type="button" class="back-dashboard" id="backSheetDashboard">← Beranda</button><div><h2 id="sheetTitle">Data Spreadsheet</h2><p class="sheet-panel-subtitle" id="sheetSubtitle"></p></div></div>
+        <div class="customer-status" id="sheetStatus" role="status"></div>
+        <div class="sheet-table-wrap"><table class="sheet-table"><thead id="sheetHead"></thead><tbody id="sheetBody"></tbody></table></div>
       </section>
       <footer>© 2026 WangonNet · Dashboard e-Billing</footer>
     </main>
@@ -259,7 +277,7 @@
     };
     const loadCustomers = async () => { try { const sheet=await fetch('/data/customers-sheet.json',{cache:'no-store'}); if(sheet.ok) { const snapshot=await sheet.json(); customerHeaders=snapshot.headers||[]; customers=(snapshot.rows||[]).map((row) => ({sheet_row:row})); renderCustomers(); return; } const r=await fetch('/api/customers'); const data=await r.json(); if(!r.ok) throw new Error(data.error); customerHeaders=data.headers||[]; customers=data.sheetRows?.map((row) => ({sheet_row:row})) || data.customers||[]; renderCustomers(); } catch(e) { setCustomerStatus(e.message,true); } };
     const dashboardPage = document.getElementById('dashboard');
-    const showDashboard = () => { customerPanel.hidden=true; dashboardPage.hidden=false; history.replaceState(null, '', '#dashboard'); };
+    const showDashboard = () => { customerPanel.hidden=true; sheetPanel.hidden=true; dashboardPage.hidden=false; history.replaceState(null, '', '#dashboard'); };
     const showCustomers = () => { dashboardPage.hidden=true; customerPanel.hidden=false; history.replaceState(null, '', '#pelanggan'); loadCustomers(); };
     document.querySelectorAll('a[href="#pelanggan"]').forEach(a=>a.addEventListener('click',e=>{e.preventDefault();showCustomers();}));
     document.querySelectorAll('a[href="#dashboard"]').forEach(a=>a.addEventListener('click',e=>{e.preventDefault();showDashboard();}));
@@ -270,6 +288,16 @@
     customerBody.addEventListener('click', (event) => { const button=event.target.closest('.row-action'); if (!button) return; const labels={edit:'Edit pelanggan',payment:'Pembayaran',activate:'Aktifkan pelanggan',deactivate:'Nonaktifkan pelanggan',delete:'Hapus pelanggan'}; setCustomerStatus(`${labels[button.dataset.action]}: aksi siap diproses untuk pelanggan ini.`); });
     loadCustomers();
     if (location.hash === '#pelanggan') showCustomers();
+    const sheetPanel = document.getElementById('sheetPanel');
+    const sheetTitle = document.getElementById('sheetTitle'); const sheetSubtitle = document.getElementById('sheetSubtitle');
+    const sheetStatus = document.getElementById('sheetStatus'); const sheetHead = document.getElementById('sheetHead'); const sheetBody = document.getElementById('sheetBody');
+    let sheetTabs = {}; let activeSheet = ''; let sheetSortIndex = null; let sheetSortDirection = 1;
+    const sheetCell = (cell) => typeof cell === 'object' ? (cell.value ?? '') : (cell ?? '');
+    const showSheet = async (name) => { dashboardPage.hidden=true; customerPanel.hidden=true; sheetPanel.hidden=false; activeSheet=name; sheetSortIndex=null; sheetSortDirection=1; sheetTitle.textContent=`Data ${name}`; history.replaceState(null,'',`#${name.toLowerCase()}`); try { if (!Object.keys(sheetTabs).length) { const r=await fetch('/data/spreadsheet-tabs.json',{cache:'no-store'}); if(!r.ok) throw new Error('Snapshot spreadsheet tidak tersedia'); sheetTabs=await r.json(); } renderSheet(); } catch(e) { sheetStatus.textContent=e.message; } };
+    const renderSheet = () => { const tab=sheetTabs[activeSheet]; if(!tab) return; const rows=tab.rows||[]; sheetSubtitle.textContent=`${rows.length} baris × ${tab.columnCount} kolom dari spreadsheet`; const ordered=rows.map((row,index)=>({row,index})); if(sheetSortIndex!==null) ordered.sort((a,b)=>String(sheetCell(a.row[sheetSortIndex])).localeCompare(String(sheetCell(b.row[sheetSortIndex])),'id',{numeric:true,sensitivity:'base'})*sheetSortDirection||a.index-b.index); sheetHead.innerHTML='<tr>'+Array.from({length:tab.columnCount},(_,i)=>`<th><button class="sheet-sort" type="button" data-index="${i}">Kolom ${i+1} <span>${sheetSortIndex===i?(sheetSortDirection===1?'▲':'▼'):'↕'}</span></button></th>`).join('')+'</tr>'; sheetBody.innerHTML=ordered.map(({row})=>'<tr>'+Array.from({length:tab.columnCount},(_,i)=>{const c=row[i]||{value:''}; const value=sheetCell(c); const formula=c.formula?` title="Rumus: ${escapeCell(c.formula)}"`:''; return `<td${formula}>${escapeCell(value)}</td>`;}).join('')+'</tr>').join(''); sheetHead.querySelectorAll('.sheet-sort').forEach(b=>b.addEventListener('click',()=>{const i=Number(b.dataset.index); if(sheetSortIndex===i) sheetSortDirection*=-1; else {sheetSortIndex=i;sheetSortDirection=1;} renderSheet();})); };
+    document.querySelectorAll('a[href="#paket"],a[href="#area"],a[href="#odp"]').forEach(a=>a.addEventListener('click',e=>{e.preventDefault();showSheet(a.getAttribute('href').slice(1).replace(/^./,m=>m.toUpperCase()));}));
+    document.getElementById('backSheetDashboard').addEventListener('click',showDashboard);
+    if(['paket','area','odp'].includes(location.hash.slice(1))) showSheet(location.hash.slice(1).replace(/^./,m=>m.toUpperCase()));
     const downloadText = (name, content, type) => { const a=document.createElement('a'); a.href=URL.createObjectURL(new Blob([content],{type})); a.download=name; a.click(); setTimeout(()=>URL.revokeObjectURL(a.href),1000); };
     const csvEscape = v => { const s=v??''; return /[",\n\r]/.test(s)?`"${String(s).replaceAll('"','""')}"`:s; };
     const exportCustomers = (name) => { const rows=[customerHeaders,...customers.map(customerRow)]; downloadText(name,rows.map(r=>r.map(csvEscape).join(',')).join('\r\n'),'text/csv;charset=utf-8'); };
