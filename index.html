@@ -118,6 +118,10 @@
       outline-offset: 2px;
     }
 
+    .sidebar a[aria-current="location"] {
+      background: rgba(37, 99, 235, 0.3);
+    }
+
     .overview:target,
     .section-block:target,
     .panel:target,
@@ -372,8 +376,8 @@
         <p>Halaman ini menyiapkan menu, blok dashboard, dan area modul utama agar pengembangan berikutnya bisa dilakukan secara bertahap.</p>
         <div class="overview-grid">
           <div class="card">
-            <strong>8 Dashboard</strong>
-            <p>Utama, cabang, sales, mitra, grafik, PPOB, voucher, dan mapping.</p>
+            <strong>9 Dashboard</strong>
+            <p>Utama, cabang, sales, mitra, grafik, PPOB, voucher, mapping, dan income summary.</p>
             <span class="status success">Siap dikembangkan</span>
           </div>
           <div class="card">
@@ -387,8 +391,8 @@
             <span class="status warning">Butuh implementasi lanjutan</span>
           </div>
           <div class="card">
-            <strong>Finance &amp; Summary</strong>
-            <p>Area khusus untuk laporan, accounting, pemasukan, pengeluaran, dan balance.</p>
+            <strong>4 Modul Keuangan</strong>
+            <p>Area khusus untuk accounting, laporan, income summary, pemasukan, pengeluaran, dan balance.</p>
             <span class="status success">Blok tersedia</span>
           </div>
         </div>
@@ -574,5 +578,23 @@
       </section>
     </main>
   </div>
+  <script>
+    const sidebarLinks = Array.from(document.querySelectorAll('.sidebar a[href^="#"]'));
+
+    function setCurrentLink() {
+      const activeHash = window.location.hash || '#dashboard-overview';
+
+      sidebarLinks.forEach((link) => {
+        if (link.getAttribute('href') === activeHash) {
+          link.setAttribute('aria-current', 'location');
+        } else {
+          link.removeAttribute('aria-current');
+        }
+      });
+    }
+
+    window.addEventListener('hashchange', setCurrentLink);
+    setCurrentLink();
+  </script>
 </body>
 </html>

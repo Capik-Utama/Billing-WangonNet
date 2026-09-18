@@ -2,6 +2,8 @@
 
 Struktur awal halaman utama eBilling sudah disiapkan dalam file `index.html`.
 
+Catatan: halaman ini masih berupa prototype statis untuk struktur antarmuka utama. Modul yang ditampilkan belum memiliki backend, autentikasi, atau proses bisnis yang aktif.
+
 ## Isi awal
 
 - Sidebar modul utama eBilling
@@ -13,4 +15,4 @@ Struktur awal halaman utama eBilling sudah disiapkan dalam file `index.html`.
 
 ## Cara membuka
 
-Cukup buka file `index.html` langsung di browser untuk melihat struktur awal antarmuka.
+Cukup buka file `index.html` langsung di browser untuk melihat prototype dengan navigasi anchor internal dan layout responsif dasar.
