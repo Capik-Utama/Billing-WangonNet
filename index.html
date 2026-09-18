@@ -23,6 +23,19 @@
     body.theme-biru { --page: #eaf3ff; --ink: #102a43; --muted: #36536f; --line: #b9d4f5; --sidebar: #0b3d91; --sidebar-text: #ffffff; --sidebar-muted: #dbeafe; --accent: #1769aa; --accent-ink: #ffffff; }
     body.theme-hijau { --page: #edf8f0; --ink: #123524; --muted: #3d6250; --line: #b9dec5; --sidebar: #14532d; --sidebar-text: #ffffff; --sidebar-muted: #dcfce7; --accent: #198754; --accent-ink: #ffffff; }
     body.theme-ping { --page: #fff0f6; --ink: #4a102a; --muted: #7d405d; --line: #f4bfd5; --sidebar: #831843; --sidebar-text: #ffffff; --sidebar-muted: #fce7f3; --accent: #db2777; --accent-ink: #ffffff; }
+    body:not(.authenticated) .topbar, body:not(.authenticated) .shell { display: none; }
+    .login-screen { min-height: 100vh; display: grid; place-items: center; padding: 24px; background: radial-gradient(circle at top right, rgba(23,105,170,.16), transparent 38%), var(--page); }
+    body.authenticated .login-screen { display: none; }
+    .login-card { width: min(100%, 420px); background: #fff; border: 1px solid var(--line); border-radius: 22px; padding: 32px; box-shadow: 0 18px 50px rgba(22,34,55,.16); }
+    .login-card h1 { margin: 0; color: var(--accent); font-size: 28px; }
+    .login-card p { color: var(--muted); line-height: 1.5; margin: 8px 0 24px; }
+    .login-form { display: grid; gap: 14px; }
+    .login-form label { display: grid; gap: 6px; color: var(--ink); font-weight: 700; font-size: 14px; }
+    .login-form input { border: 1px solid var(--line); border-radius: 10px; padding: 12px 13px; font: inherit; color: var(--ink); background: #fff; }
+    .login-form input:focus { outline: 3px solid rgba(23,105,170,.2); border-color: var(--accent); }
+    .login-submit { border: 0; border-radius: 10px; padding: 13px; background: var(--accent); color: var(--accent-ink); font-weight: 800; cursor: pointer; font: inherit; margin-top: 4px; }
+    .login-submit:disabled { opacity: .65; cursor: wait; }
+    .login-error { min-height: 20px; color: #b42318; font-size: 13px; font-weight: 700; }
     * { box-sizing: border-box; }
     html { scroll-behavior: smooth; }
     body { margin: 0; background: var(--page); color: var(--ink); font-family: Arial, Helvetica, sans-serif; transition: background .2s ease, color .2s ease; }
@@ -112,6 +125,18 @@
   </style>
 </head>
 <body>
+  <section class="login-screen" id="loginScreen" aria-label="Halaman login">
+    <div class="login-card">
+      <h1>e-Billing WangonNet</h1>
+      <p>Masuk untuk mengakses dashboard Billing.</p>
+      <form class="login-form" id="loginForm">
+        <label>Username<input name="username" autocomplete="username" required></label>
+        <label>Password<input name="password" type="password" autocomplete="current-password" required></label>
+        <div class="login-error" id="loginError" role="alert" aria-live="polite"></div>
+        <button class="login-submit" type="submit">Masuk</button>
+      </form>
+    </div>
+  </section>
   <header class="topbar">
     <button class="menu-button" id="menuButton" type="button" aria-label="Buka menu" aria-expanded="false" aria-controls="mainSidebar">☰</button>
     <h1>Selamat Datang di e-Billing WangonNet</h1>
@@ -173,6 +198,29 @@
       localStorage.setItem('billing-theme', selected);
     };
     themeButtons.forEach((button) => button.addEventListener('click', () => applyTheme(button.dataset.theme)));
+    const loginForm = document.getElementById('loginForm');
+    const loginError = document.getElementById('loginError');
+    const setAuthenticated = (user) => {
+      document.body.classList.add('authenticated');
+      document.querySelector('.welcome').textContent = `● ${user.displayName || user.username} (${user.role})`;
+    };
+    fetch('/api/session').then((response) => response.ok ? response.json() : Promise.reject()).then(({ user }) => setAuthenticated(user)).catch(() => {});
+    loginForm.addEventListener('submit', async (event) => {
+      event.preventDefault();
+      const button = loginForm.querySelector('button');
+      button.disabled = true;
+      loginError.textContent = '';
+      try {
+        const response = await fetch('/api/login', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(Object.fromEntries(new FormData(loginForm))) });
+        const result = await response.json();
+        if (!response.ok) throw new Error(result.error || 'Login gagal');
+        setAuthenticated(result.user);
+      } catch (error) {
+        loginError.textContent = error.message;
+      } finally {
+        button.disabled = false;
+      }
+    });
     applyTheme(localStorage.getItem('billing-theme') || 'biru');
     const menuButton = document.getElementById('menuButton');
     const sidebar = document.getElementById('mainSidebar');
@@ -190,6 +238,11 @@
     sidebar.querySelectorAll('a').forEach((link) => link.addEventListener('click', () => {
       if (window.matchMedia('(max-width: 760px)').matches) setMenuState(false);
     }));
+    document.querySelector('a[href="#logout"]').addEventListener('click', async (event) => {
+      event.preventDefault();
+      await fetch('/api/session', { method: 'DELETE' });
+      window.location.reload();
+    });
     window.addEventListener('resize', () => {
       if (!window.matchMedia('(max-width: 760px)').matches) setMenuState(false);
     });
