@@ -87,7 +87,12 @@
       margin-bottom: 22px;
     }
 
-    .sidebar nav {
+    .sidebar-nav {
+      display: grid;
+      gap: 22px;
+    }
+
+    .sidebar-links {
       display: grid;
       gap: 8px;
       margin-top: 10px;
@@ -110,6 +115,11 @@
       background: rgba(37, 99, 235, 0.2);
       outline: 2px solid #93c5fd;
       outline-offset: 2px;
+    }
+
+    .sidebar a[aria-current="location"] {
+      background: rgba(37, 99, 235, 0.3);
+      border: 1px solid rgba(147, 197, 253, 0.65);
     }
 
     .overview:target,
@@ -289,65 +299,67 @@
         <h2 class="brand-title">Billing WangonNet</h2>
       </div>
 
-      <div class="sidebar-section">
-        <span class="sidebar-section-label">Dashboard</span>
-        <nav aria-label="Navigasi dashboard">
-          <a href="#dashboard-overview">Ringkasan Dashboard</a>
-          <a href="#dashboard">Dashboard utama</a>
-          <a href="#dashboard-cabang">Dashboard Cabang</a>
-          <a href="#dashboard-sales">Dashboard Sales</a>
-          <a href="#dashboard-mitra">Dashboard Mitra</a>
-          <a href="#dashboard-grafik">Dashboard Grafik</a>
-          <a href="#dashboard-ppob">Dashboard PPOB</a>
-          <a href="#dashboard-voucher">Dashboard Voucher</a>
-          <a href="#dashboard-mapping">Dashboard Mapping</a>
-          <a href="#income-summary">Income Summary</a>
-        </nav>
-      </div>
+      <nav class="sidebar-nav" aria-label="Navigasi utama sidebar">
+        <div class="sidebar-section">
+          <span class="sidebar-section-label">Dashboard</span>
+          <div class="sidebar-links">
+            <a href="#dashboard-overview" aria-current="location">Ringkasan Dashboard</a>
+            <a href="#dashboard">Dashboard utama</a>
+            <a href="#dashboard-cabang">Dashboard Cabang</a>
+            <a href="#dashboard-sales">Dashboard Sales</a>
+            <a href="#dashboard-mitra">Dashboard Mitra</a>
+            <a href="#dashboard-grafik">Dashboard Grafik</a>
+            <a href="#dashboard-ppob">Dashboard PPOB</a>
+            <a href="#dashboard-voucher">Dashboard Voucher</a>
+            <a href="#dashboard-mapping">Dashboard Mapping</a>
+            <a href="#income-summary">Income Summary</a>
+          </div>
+        </div>
 
-      <div class="sidebar-section">
-        <span class="sidebar-section-label">Manajemen Data</span>
-        <nav aria-label="Navigasi manajemen data">
-          <a href="#kelola-data">Kelola Data</a>
-          <a href="#kelola-data-corporate">Kelola Data Corporate</a>
-          <a href="#poin-pelanggan">Poin Pelanggan</a>
-          <a href="#management-mikrotik">Management Mikrotik</a>
-          <a href="#data-pelanggan-status">Data pelanggan &amp; status</a>
-        </nav>
-      </div>
+        <div class="sidebar-section">
+          <span class="sidebar-section-label">Manajemen Data</span>
+          <div class="sidebar-links">
+            <a href="#kelola-data">Kelola Data</a>
+            <a href="#kelola-data-corporate">Kelola Data Corporate</a>
+            <a href="#poin-pelanggan">Poin Pelanggan</a>
+            <a href="#management-mikrotik">Management Mikrotik</a>
+            <a href="#data-pelanggan-status">Data pelanggan &amp; status</a>
+          </div>
+        </div>
 
-      <div class="sidebar-section">
-        <span class="sidebar-section-label">Operasional</span>
-        <nav aria-label="Navigasi operasional">
-          <a href="#ticket-pelanggan">Ticket pelanggan</a>
-          <a href="#voucher-operasional">Voucher</a>
-          <a href="#transaksi">Transaksi</a>
-          <a href="#payment-gateway">Payment Gateway</a>
-          <a href="#apk-android">APK Android</a>
-        </nav>
-      </div>
+        <div class="sidebar-section">
+          <span class="sidebar-section-label">Operasional</span>
+          <div class="sidebar-links">
+            <a href="#ticket-pelanggan">Ticket pelanggan</a>
+            <a href="#voucher-operasional">Voucher</a>
+            <a href="#transaksi">Transaksi</a>
+            <a href="#payment-gateway">Payment Gateway</a>
+            <a href="#apk-android">APK Android</a>
+          </div>
+        </div>
 
-      <div class="sidebar-section">
-        <span class="sidebar-section-label">Keuangan &amp; Laporan</span>
-        <nav aria-label="Navigasi keuangan dan laporan">
-          <a href="#finance-accounting">Finance &amp; Accounting</a>
-          <a href="#laporan">Laporan</a>
-          <a href="#income-summary">Income Summary</a>
-          <a href="#arus-kas">Pemasukan, pengeluaran, balance</a>
-        </nav>
-      </div>
+        <div class="sidebar-section">
+          <span class="sidebar-section-label">Keuangan &amp; Laporan</span>
+          <div class="sidebar-links">
+            <a href="#finance-accounting">Finance &amp; Accounting</a>
+            <a href="#laporan">Laporan</a>
+            <a href="#income-summary">Income Summary</a>
+            <a href="#arus-kas">Pemasukan, pengeluaran, balance</a>
+          </div>
+        </div>
 
-      <div class="sidebar-section">
-        <span class="sidebar-section-label">API &amp; Sistem</span>
-        <nav aria-label="Navigasi API dan sistem">
-          <a href="#login-api-service">Login API Service</a>
-          <a href="#dokumentasi-api">Dokumentasi API</a>
-          <a href="#logs">Logs</a>
-          <a href="#setting">Setting</a>
-          <a href="#users">Users</a>
-          <a href="#logout">Logout</a>
-        </nav>
-      </div>
+        <div class="sidebar-section">
+          <span class="sidebar-section-label">API &amp; Sistem</span>
+          <div class="sidebar-links">
+            <a href="#login-api-service">Login API Service</a>
+            <a href="#dokumentasi-api">Dokumentasi API</a>
+            <a href="#logs">Logs</a>
+            <a href="#setting">Setting</a>
+            <a href="#users">Users</a>
+            <a href="#logout">Logout</a>
+          </div>
+        </div>
+      </nav>
     </aside>
 
     <main class="content">
@@ -556,11 +568,29 @@
         </section>
       </div>
 
-      <div class="logout-action" id="logout" aria-label="Placeholder logout action">
+      <button class="logout-action" id="logout" type="button" disabled>
         <strong>Logout</strong>
         <span>Placeholder aksi logout untuk struktur awal aplikasi.</span>
-      </div>
+      </button>
     </main>
   </div>
+  <script>
+    const sidebarLinks = Array.from(document.querySelectorAll('.sidebar a[href^="#"]'));
+
+    function setCurrentLink() {
+      const activeHash = window.location.hash || '#dashboard-overview';
+
+      sidebarLinks.forEach((link) => {
+        if (link.getAttribute('href') === activeHash) {
+          link.setAttribute('aria-current', 'location');
+        } else {
+          link.removeAttribute('aria-current');
+        }
+      });
+    }
+
+    window.addEventListener('hashchange', setCurrentLink);
+    setCurrentLink();
+  </script>
 </body>
 </html>
