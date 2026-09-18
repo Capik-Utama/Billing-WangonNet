@@ -104,7 +104,8 @@
     .sidebar a:hover,
     .sidebar a:focus {
       background: rgba(37, 99, 235, 0.2);
-      outline: none;
+      outline: 2px solid #93c5fd;
+      outline-offset: 2px;
     }
 
     .content {
@@ -258,7 +259,7 @@
 
       <div class="sidebar-section">
         <span class="sidebar-section-label">Dashboard</span>
-        <nav>
+        <nav aria-label="Navigasi dashboard">
           <a href="#dashboard">Dashboard utama</a>
           <a href="#dashboard-cabang">Dashboard Cabang</a>
           <a href="#dashboard-sales">Dashboard Sales</a>
@@ -273,7 +274,7 @@
 
       <div class="sidebar-section">
         <span class="sidebar-section-label">Manajemen Data</span>
-        <nav>
+        <nav aria-label="Navigasi manajemen data">
           <a href="#kelola-data">Kelola Data</a>
           <a href="#kelola-data-corporate">Kelola Data Corporate</a>
           <a href="#poin-pelanggan">Poin Pelanggan</a>
@@ -284,7 +285,7 @@
 
       <div class="sidebar-section">
         <span class="sidebar-section-label">Operasional</span>
-        <nav>
+        <nav aria-label="Navigasi operasional">
           <a href="#ticket-pelanggan">Ticket pelanggan</a>
           <a href="#voucher-operasional">Voucher</a>
           <a href="#transaksi">Transaksi</a>
@@ -295,7 +296,7 @@
 
       <div class="sidebar-section">
         <span class="sidebar-section-label">Keuangan &amp; Laporan</span>
-        <nav>
+        <nav aria-label="Navigasi keuangan dan laporan">
           <a href="#finance-accounting">Finance &amp; Accounting</a>
           <a href="#laporan">Laporan</a>
           <a href="#income-summary">Income Summary</a>
@@ -305,7 +306,7 @@
 
       <div class="sidebar-section">
         <span class="sidebar-section-label">API &amp; Sistem</span>
-        <nav>
+        <nav aria-label="Navigasi API dan sistem">
           <a href="#login-api-service">Login API Service</a>
           <a href="#dokumentasi-api">Dokumentasi API</a>
           <a href="#logs">Logs</a>
@@ -353,13 +354,13 @@
       </section>
 
       <div class="section-list">
-        <section class="section-block" id="dashboard">
+        <section class="section-block" id="dashboard-section">
           <div class="section-header">
             <h2 class="section-heading">Dashboard</h2>
             <p class="section-intro">Kumpulan dashboard utama yang meniru struktur navigasi eBilling untuk kebutuhan monitoring.</p>
           </div>
           <div class="feature-grid">
-            <article class="panel">
+            <article class="panel" id="dashboard">
               <strong>Dashboard utama</strong>
               <p>Titik masuk utama untuk statistik pelanggan, transaksi, dan ringkasan operasional.</p>
             </article>
