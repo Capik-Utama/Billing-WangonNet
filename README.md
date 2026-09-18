@@ -1,6 +1,6 @@
 # Billing-WangonNet
 
-Struktur awal halaman utama eBilling sudah disiapkan dalam file `/home/runner/work/Billing-WangonNet/Billing-WangonNet/index.html`.
+Struktur awal halaman utama eBilling sudah disiapkan dalam file `index.html`.
 
 ## Isi awal
 
