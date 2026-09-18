@@ -24,6 +24,6 @@ Environment variable berikut adalah variabel yang saat ini direferensikan langsu
 - `SUPABASE_SERVICE_ROLE_KEY` atau `SUPABASE_SECRET_KEY`
 - `SUPABASE_PUBLISHABLE_KEY` untuk login
 - `AUTH_SECRET`
-- `GOOGLE_SHEET_ID` dan `GOOGLE_SHEET_CUSTOMERS_GID` hanya bila ingin memakai impor manual dari Google Sheets
+- `GOOGLE_SHEET_ID` dan `GOOGLE_SHEET_CUSTOMERS_GID` hanya bila ingin memakai impor manual pelanggan dari Google Sheets
 
 Impor manual Google Sheets pada implementasi saat ini memakai endpoint ekspor CSV publik milik Google Sheets dari `api/customers.js`, sehingga repository ini tidak menyertakan konfigurasi service account Google tambahan.
