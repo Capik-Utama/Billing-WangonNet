@@ -118,11 +118,6 @@
       outline-offset: 2px;
     }
 
-    .sidebar a[aria-current="location"] {
-      background: rgba(37, 99, 235, 0.3);
-      border: 1px solid rgba(147, 197, 253, 0.65);
-    }
-
     .overview:target,
     .section-block:target,
     .panel:target,
@@ -391,8 +386,8 @@
             <p>Tiket, voucher, transaksi, payment gateway, dan APK Android.</p>
             <span class="status warning">Butuh implementasi lanjutan</span>
           </div>
-          <div class="card" id="dashboard-income-summary">
-            <strong>Income Summary Dashboard</strong>
+          <div class="card">
+            <strong>Finance &amp; Summary</strong>
             <p>Area khusus untuk laporan, accounting, pemasukan, pengeluaran, dan balance.</p>
             <span class="status success">Blok tersedia</span>
           </div>
@@ -437,6 +432,10 @@
             <article class="panel" id="dashboard-mapping">
               <strong>Dashboard Mapping</strong>
               <p>Pemetaan pelanggan, area layanan, dan titik jaringan.</p>
+            </article>
+            <article class="panel" id="dashboard-income-summary">
+              <strong>Income Summary Dashboard</strong>
+              <p>Ringkasan pemasukan dalam konteks dashboard untuk pemantauan cepat.</p>
             </article>
           </div>
         </section>
@@ -575,23 +574,5 @@
       </section>
     </main>
   </div>
-  <script>
-    const sidebarLinks = Array.from(document.querySelectorAll('.sidebar a[href^="#"]'));
-
-    function setCurrentLink() {
-      const activeHash = window.location.hash || '#dashboard-overview';
-
-      sidebarLinks.forEach((link) => {
-        if (link.getAttribute('href') === activeHash) {
-          link.setAttribute('aria-current', 'location');
-        } else {
-          link.removeAttribute('aria-current');
-        }
-      });
-    }
-
-    window.addEventListener('hashchange', setCurrentLink);
-    setCurrentLink();
-  </script>
 </body>
 </html>
