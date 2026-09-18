@@ -2,7 +2,7 @@
 
 Struktur awal halaman utama eBilling sudah disiapkan dalam file `index.html`.
 
-Catatan: halaman ini masih berupa prototipe statis untuk struktur antarmuka utama. Modul yang ditampilkan belum memiliki backend, autentikasi, atau proses bisnis yang aktif.
+Catatan: halaman ini masih berupa prototipe statis untuk struktur antarmuka utama. Modul yang ditampilkan belum memiliki backend, autentikasi, atau proses bisnis yang aktif. Menu seperti `Login API Service`, `Users`, dan `Informasi Logout` saat ini masih sebatas placeholder informasi struktur.
 
 ## Isi awal
 
@@ -15,4 +15,4 @@ Catatan: halaman ini masih berupa prototipe statis untuk struktur antarmuka utam
 
 ## Cara membuka
 
-Cukup buka file `index.html` langsung di browser untuk melihat prototipe dengan navigasi anchor internal dan layout responsif dasar.
+Cukup buka file `index.html` langsung di browser untuk melihat prototipe dengan navigasi anchor internal dan layout responsif dasar. Aktifkan JavaScript di browser agar penanda item aktif pada sidebar dapat diperbarui saat hash URL berubah.
