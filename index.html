@@ -122,6 +122,24 @@
       .finance-card .card-label { font-size: 12px; }
       .card-action { font-size: 9px; }
     }
+
+    .customer-panel { margin-top: 24px; background: #fff; border: 1px solid var(--line); border-radius: 16px; box-shadow: var(--shadow); padding: clamp(16px, 3vw, 24px); scroll-margin-top: 82px; }
+    .customer-panel[hidden] { display: none; }
+    .customer-head { display:flex; align-items:flex-start; justify-content:space-between; gap:16px; margin-bottom:16px; }
+    .customer-head h2 { margin:0; font-size:clamp(20px,3vw,28px); }
+    .customer-head p { margin:6px 0 0; color:var(--muted); }
+    .customer-actions { display:flex; flex-wrap:wrap; gap:8px; justify-content:flex-end; }
+    .customer-actions button, .file-label { border:0; border-radius:9px; padding:10px 12px; font:inherit; font-weight:800; cursor:pointer; background:var(--accent); color:var(--accent-ink); }
+    .customer-actions button.secondary, .file-label.secondary { background:#e8f1fb; color:var(--ink); border:1px solid var(--line); }
+    .file-label input { display:none; }
+    .customer-status { min-height:22px; color:var(--muted); font-size:13px; font-weight:700; margin:10px 0; }
+    .customer-table-wrap { overflow:auto; border:1px solid var(--line); border-radius:11px; }
+    .customer-table { border-collapse:collapse; min-width:1100px; width:100%; font-size:13px; }
+    .customer-table th, .customer-table td { padding:10px 11px; border-bottom:1px solid #e6eef8; text-align:left; white-space:nowrap; }
+    .customer-table th { background:#eef6ff; color:var(--ink); position:sticky; top:0; z-index:1; }
+    .customer-table tr:hover td { background:#f8fbff; }
+    .empty-customers { padding:28px; text-align:center; color:var(--muted); }
+    @media (max-width:760px) { .customer-head { display:block; } .customer-actions { justify-content:flex-start; margin-top:14px; } .customer-actions button, .file-label { flex:1 1 calc(50% - 8px); text-align:center; font-size:12px; } }
   </style>
 </head>
 <body>
@@ -153,7 +171,7 @@
     </aside>
     <main class="main" id="dashboard">
       <section class="cards" aria-label="Ringkasan dashboard">
-        <article class="card" data-color><div class="card-body"><div class="card-value">0</div><div class="card-label">Data Pelanggan</div></div><a class="card-action" href="#pelanggan">Selengkapnya ➜</a></article>
+        <article class="card" data-color><div class="card-body"><div class="card-value" id="customerCount">0</div><div class="card-label">Data Pelanggan</div></div><a class="card-action" href="#pelanggan">Selengkapnya ➜</a></article>
         <article class="card" data-color><div class="card-body"><div class="card-value">0</div><div class="card-label">Pelanggan Belum Lunas</div></div><a class="card-action" href="#keuangan">Selengkapnya ➜</a></article>
         <article class="card" data-color><div class="card-body"><div class="card-value">0</div><div class="card-label">Pelanggan Sudah Lunas</div></div><a class="card-action" href="#keuangan">Selengkapnya ➜</a></article>
         <article class="card" data-color><div class="card-body"><div class="card-value">0</div><div class="card-label">Buat Ticket Pelanggan</div></div><a class="card-action" href="#ticket">Selengkapnya ➜</a></article>
@@ -162,90 +180,74 @@
         <article class="card finance-card" data-color><div class="card-body"><div class="card-value">Rp. 0</div><div class="card-label">Pemasukan Bulan Ini</div></div><a class="card-action" href="#keuangan">Selengkapnya ➜</a></article>
         <article class="card finance-card" data-color><div class="card-body"><div class="card-value">Rp. 0</div><div class="card-label">Pengeluaran Bulan Ini</div></div><a class="card-action" href="#keuangan">Selengkapnya ➜</a></article>
       </section>
+
+      <section class="customer-panel" id="pelanggan" hidden aria-labelledby="customerTitle">
+        <div class="customer-head">
+          <div><h2 id="customerTitle">Data Pelanggan</h2><p id="customerSubtitle">Memuat data pelanggan dari billing…</p></div>
+          <div class="customer-actions" aria-label="Aksi data pelanggan">
+            <button type="button" id="googleImport">↥ Import dari Google Sheet</button>
+            <button type="button" id="googleExport">↧ Export ke Google Sheet</button>
+            <label class="file-label secondary">↥ Import dari Excel<input id="excelImport" type="file" accept=".csv,.xlsx,.xls,text/csv"></label>
+            <button type="button" class="secondary" id="excelExport">↧ Export ke Excel</button>
+          </div>
+        </div>
+        <div class="customer-status" id="customerStatus" role="status"></div>
+        <div class="customer-table-wrap"><table class="customer-table"><thead id="customerHead"></thead><tbody id="customerBody"></tbody></table><div class="empty-customers" id="customerEmpty" hidden>Tidak ada data pelanggan.</div></div>
+      </section>
       <footer>© 2026 WangonNet · Dashboard e-Billing</footer>
     </main>
   </div>
+  <script src="https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js"></script>
   <script>
-    // Warna kartu diacak setiap pemuatan, dengan teks hitam/putih dipilih otomatis agar kontras.
-    const palette = [
-      ['#168f42', '#ffffff'], ['#087df0', '#ffffff'], ['#df2939', '#ffffff'],
-      ['#159bb0', '#ffffff'], ['#f4b400', '#241b00'], ['#7138c8', '#ffffff'],
-      ['#e76f20', '#ffffff'], ['#087f8c', '#ffffff']
-    ];
-    const cards = [...document.querySelectorAll('[data-color]')];
-    for (let i = palette.length - 1; i > 0; i--) {
-      const j = Math.floor(Math.random() * (i + 1));
-      [palette[i], palette[j]] = [palette[j], palette[i]];
-    }
-    cards.forEach((card, i) => {
-      const [background, foreground] = palette[i % palette.length];
-      card.style.background = background;
-      card.style.color = foreground;
-      if (foreground === '#241b00') card.classList.add('dark-text');
-    });
-    const themeButtons = [...document.querySelectorAll('.theme-option')];
-    const applyTheme = (theme) => {
-      const validThemes = ['gelap', 'biru', 'hijau', 'ping'];
-      const selected = validThemes.includes(theme) ? theme : 'biru';
-      document.body.classList.remove(...validThemes.map((name) => `theme-${name}`));
-      document.body.classList.add(`theme-${selected}`);
-      themeButtons.forEach((button) => {
-        const active = button.dataset.theme === selected;
-        button.classList.toggle('active', active);
-        button.setAttribute('aria-pressed', String(active));
-      });
-      document.querySelector('meta[name="theme-color"]').setAttribute('content', getComputedStyle(document.body).getPropertyValue('--accent').trim());
-      localStorage.setItem('billing-theme', selected);
+
+    const customerPanel = document.getElementById('pelanggan');
+    const customerCount = document.getElementById('customerCount');
+    const customerSubtitle = document.getElementById('customerSubtitle');
+    const customerStatus = document.getElementById('customerStatus');
+    const customerHead = document.getElementById('customerHead');
+    const customerBody = document.getElementById('customerBody');
+    const customerEmpty = document.getElementById('customerEmpty');
+    let customerHeaders = []; let customers = [];
+    const setCustomerStatus = (text, error=false) => { customerStatus.textContent=text; customerStatus.style.color=error?'#b42318':'var(--muted)'; };
+    const renderCustomers = () => {
+      customerCount.textContent=customers.length.toLocaleString('id-ID'); customerSubtitle.textContent=`${customers.length.toLocaleString('id-ID')} pelanggan tersimpan di billing`;
+      customerHead.innerHTML='<tr>'+['NO','Nama','Kode Pelanggan','Cabang','Area','Paket Internet','No HP','Alamat','Tanggal Bergabung','Hari Tagihan','Status'].map(h=>`<th>${h}</th>`).join('')+'</tr>';
+      customerBody.innerHTML=customers.map(c=>`<tr><td>${c.source_no??''}</td><td>${c.name??''}</td><td>${c.customer_code??''}</td><td>${c.branch_code??''}</td><td>${c.area_code??''}</td><td>${c.package_name??''}</td><td>${c.phone??c.whatsapp??''}</td><td>${c.address??''}</td><td>${c.join_date??''}</td><td>${c.billing_day??''}</td><td>${c.status??''}</td></tr>`).join(''); customerEmpty.hidden=customers.length>0;
     };
-    themeButtons.forEach((button) => button.addEventListener('click', () => applyTheme(button.dataset.theme)));
-    const loginForm = document.getElementById('loginForm');
-    const loginError = document.getElementById('loginError');
-    const setAuthenticated = (user) => {
-      document.body.classList.add('authenticated');
-      document.querySelector('.welcome').textContent = `● ${user.displayName || user.username} (${user.role})`;
-    };
-    fetch('/api/session').then((response) => response.ok ? response.json() : Promise.reject()).then(({ user }) => setAuthenticated(user)).catch(() => {});
-    loginForm.addEventListener('submit', async (event) => {
-      event.preventDefault();
-      const button = loginForm.querySelector('button');
-      button.disabled = true;
-      loginError.textContent = '';
+    const loadCustomers = async () => { try { const r=await fetch('/api/customers'); const data=await r.json(); if(!r.ok) throw new Error(data.error); customerHeaders=data.headers||[]; customers=data.customers||[]; renderCustomers(); } catch(e) { setCustomerStatus(e.message,true); } };
+    const showCustomers = () => { customerPanel.hidden=false; customerPanel.scrollIntoView({behavior:'smooth',block:'start'}); loadCustomers(); };
+    document.querySelectorAll('a[href="#pelanggan"]').forEach(a=>a.addEventListener('click',e=>{e.preventDefault();showCustomers();}));
+    const downloadText = (name, content, type) => { const a=document.createElement('a'); a.href=URL.createObjectURL(new Blob([content],{type})); a.download=name; a.click(); setTimeout(()=>URL.revokeObjectURL(a.href),1000); };
+    const csvEscape = v => { const s=v??''; return /[",\n\r]/.test(s)?`"${String(s).replaceAll('"','""')}"`:s; };
+    const exportCustomers = (name) => { const rows=[customerHeaders,...customers.map(c=>customerHeaders.map((h,i)=>i===0?c.source_no:i===1?c.name:i===2?c.customer_code:i===3?c.branch_code:i===4?c.area_code:i===5?c.package_name:i===8?c.phone:i===11?c.address:i===40?c.join_date:i===41?c.billing_day:i===42?c.status:i===43?c.active_period:''))]; downloadText(name,rows.map(r=>r.map(csvEscape).join(',')).join('\r\n'),'text/csv;charset=utf-8'); };
+    document.getElementById('excelExport').addEventListener('click',()=>exportCustomers('pelanggan-wangonnet.csv'));
+    document.getElementById('googleExport').addEventListener('click',()=>setCustomerStatus('Export Google Sheet memerlukan koneksi write-back Google Apps Script; endpoint siap ditambahkan setelah scope Google tersedia.'));
+    document.getElementById('googleImport').addEventListener('click',async()=>{ setCustomerStatus('Mengambil data Google Sheet…'); try { const r=await fetch('/api/customers',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({action:'google-import'})}); const d=await r.json(); if(!r.ok) throw new Error(d.error); setCustomerStatus(`Import selesai: ${d.inserted} baru, ${d.updated} diperbarui, ${d.skipped} dilewati.`); await loadCustomers(); } catch(e){setCustomerStatus(e.message,true);} });
+    document.getElementById('excelImport').addEventListener('change', async (event) => {
+      const file = event.target.files[0];
+      if (!file) return;
+      setCustomerStatus('Membaca file Excel/CSV…');
       try {
-        const response = await fetch('/api/login', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(Object.fromEntries(new FormData(loginForm))) });
+        let rows;
+        if (/\.xlsx?$/i.test(file.name)) {
+          const workbook = XLSX.read(await file.arrayBuffer(), { type: 'array' });
+          rows = XLSX.utils.sheet_to_json(workbook.Sheets[workbook.SheetNames[0]], { header: 1, defval: '' });
+        } else {
+          const text = await file.text();
+          rows = text.trim().split(/\r?\n/).map(line => line.split(/,(?=(?:[^\"]*\"[^\"]*\")*[^\"]*$)/).map(cell => cell.replace(/^\"|\"$/g, '').replaceAll('\"\"','\"')));
+        }
+        const response = await fetch('/api/customers', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ rows: rows.slice(1) }) });
         const result = await response.json();
-        if (!response.ok) throw new Error(result.error || 'Login gagal');
-        setAuthenticated(result.user);
+        if (!response.ok) throw new Error(result.error || 'Import file gagal');
+        setCustomerStatus(`Import file selesai: ${result.inserted} baru, ${result.updated} diperbarui, ${result.skipped} dilewati.`);
+        await loadCustomers();
       } catch (error) {
-        loginError.textContent = error.message;
+        setCustomerStatus(error.message, true);
       } finally {
-        button.disabled = false;
+        event.target.value = '';
       }
     });
-    applyTheme(localStorage.getItem('billing-theme') || 'biru');
-    const menuButton = document.getElementById('menuButton');
-    const sidebar = document.getElementById('mainSidebar');
-    const setMenuState = (isOpen) => {
-      sidebar.classList.toggle('open', isOpen);
-      document.body.classList.toggle('menu-open', isOpen && !window.matchMedia('(max-width: 760px)').matches);
-      menuButton.setAttribute('aria-expanded', String(isOpen));
-      menuButton.setAttribute('aria-label', isOpen ? 'Tutup menu' : 'Buka menu');
-    };
-    menuButton.addEventListener('click', () => setMenuState(!sidebar.classList.contains('open')));
-    document.addEventListener('click', (event) => {
-      if (!sidebar.classList.contains('open')) return;
-      if (!sidebar.contains(event.target) && !menuButton.contains(event.target)) setMenuState(false);
-    });
-    sidebar.querySelectorAll('a').forEach((link) => link.addEventListener('click', () => {
-      if (window.matchMedia('(max-width: 760px)').matches) setMenuState(false);
-    }));
-    document.querySelector('a[href="#logout"]').addEventListener('click', async (event) => {
-      event.preventDefault();
-      await fetch('/api/session', { method: 'DELETE' });
-      window.location.reload();
-    });
-    window.addEventListener('resize', () => {
-      if (!window.matchMedia('(max-width: 760px)').matches) setMenuState(false);
-    });
+
   </script>
 </body>
 </html>
