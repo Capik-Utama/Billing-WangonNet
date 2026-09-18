@@ -1,10 +1,27 @@
+const crypto = require('crypto');
 const SUPABASE_URL = process.env.SUPABASE_URL;
 const SUPABASE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_SECRET_KEY || process.env.SUPABASE_PUBLISHABLE_KEY;
 const SHEET_ID = process.env.GOOGLE_SHEET_ID || '1g2GzzTF214d2-duyuriun-gIGgeHtcxFnXOQO2d4Drg';
 const SHEET_GID = process.env.GOOGLE_SHEET_CUSTOMERS_GID || '1539527690';
 const HEADERS = ['NO','Nama','Kode Pelanggan','Cabang','Area','Paket Internet','Sales','No KTP','No HP','Email','WhatsApp','Alamat','RT','RW','Desa/Kelurahan','Kecamatan','Kabupaten/Kota','Latitude','Longitude','PPPoE Username','PPPoE Password','ONU Serial','OLT','PON','VLAN','','ODP','Port ODP','Tipe Modem','MAC Address','IP Address','Redaman ONU','Redaman ODP','RX ONT','RX ODP','Speedtest Download','Speedtest Upload','Ping (ms)','Jitter (ms)','Catatan Test','Tanggal Bergabung','Hari Tagihan','Status','Masa Aktif'];
 
-function json(res, status, body) { res.statusCode = status; res.setHeader('Content-Type','application/json; charset=utf-8'); res.end(JSON.stringify(body)); }
+function json(res, status, body) { res.statusCode = status; res.setHeader('Content-Type', 'application/json; charset=utf-8'); res.end(JSON.stringify(body)); }
+function getSession(req) {
+  const cookies = Object.fromEntries((req.headers.cookie || '').split(';').filter(Boolean).map((item) => {
+    const index = item.indexOf('=');
+    return [item.slice(0, index).trim(), decodeURIComponent(item.slice(index + 1).trim())];
+  }));
+  const token = cookies.billing_session;
+  if (!token || !process.env.AUTH_SECRET) return null;
+  const [body, signature] = token.split('.');
+  if (!body || !signature) return null;
+  const expected = crypto.createHmac('sha256', process.env.AUTH_SECRET).update(body).digest('base64url');
+  if (signature.length !== expected.length || !crypto.timingSafeEqual(Buffer.from(signature), Buffer.from(expected))) return null;
+  try {
+    const session = JSON.parse(Buffer.from(body, 'base64url').toString('utf8'));
+    return session.exp > Date.now() ? session : null;
+  } catch { return null; }
+}
 function value(row, i) { return row[i] == null ? '' : String(row[i]).trim(); }
 function csvEscape(value) { const s = value == null ? '' : String(value); return /[",\n\r]/.test(s) ? `"${s.replaceAll('"','""')}"` : s; }
 function parseCsv(text) {
@@ -31,13 +48,10 @@ async function listCustomers() { return sb('customers?select=id,source_no,name,c
 async function importRows(rows) { let inserted=0, updated=0, skipped=0, errors=[]; for(let i=0;i<rows.length;i++) { const rec=toRecord(rows[i],i+2); if(!rec){ skipped++; continue; } delete rec._source_row_number; delete rec._raw_record; try { const existing=rec.customer_code ? await sb(`customers?select=id&customer_code=eq.${encodeURIComponent(rec.customer_code)}&limit=1`) : []; if(existing[0]) { await sb(`customers?id=eq.${existing[0].id}`,{method:'PATCH',body:JSON.stringify(rec)}); updated++; } else { await sb('customers',{method:'POST',headers:{Prefer:'return=minimal'},body:JSON.stringify(rec)}); inserted++; } } catch(e) { errors.push({row:i+2,error:e.message}); } } return {inserted,updated,skipped,errors}; }
 async function googleRows() { const r=await fetch(`https://docs.google.com/spreadsheets/d/${SHEET_ID}/export?format=csv&gid=${SHEET_GID}`); if(!r.ok) throw new Error('Google Sheet tidak dapat diakses. Pastikan sheet dapat dibaca oleh akun/server.'); return parseCsv(await r.text()).slice(1); }
 module.exports = async function(req,res) {
-  if(req.method==='GET') { try { const customers=await listCustomers(); if (req.query?.format === 'csv') { const rows=[HEADERS,...customers.map(c=>HEADERS.map((_,i)=>i===0?c.source_no:i===1?c.name:i===2?c.customer_code:i===3?c.branch_code:i===4?c.area_code:i===5?c.package_name:i===8?c.phone:i===10?c.whatsapp:i===11?c.address:i===40?c.join_date:i===41?c.billing_day:i===42?c.status:i===43?c.active_period:''))]; res.statusCode=200; res.setHeader('Content-Type','text/csv; charset=utf-8'); res.setHeader('Content-Disposition','attachment; filename="pelanggan-wangonnet.csv"'); return res.end(rows.map(r=>r.map(csvEscape).join(',')).join('\r\n')); } const sheetRows = await googleRows().catch(() => null); const safeSheetRows = sheetRows ? sheetRows.map((row) => row.map((value, index) => index === 20 && value ? '••••••' : value)) : null; return json(res,200,{customers,count:customers.length,headers:HEADERS,sheetRows:safeSheetRows}); } catch(e) { return json(res,500,{error:e.message}); } }
+  if (!getSession(req)) return json(res,401,{error:'Belum login'});
+  if(req.method==='GET') { try { const customers=await listCustomers(); if (req.query?.format === 'csv') { const rows=[HEADERS,...customers.map(c=>HEADERS.map((_,i)=>i===0?c.source_no:i===1?c.name:i===2?c.customer_code:i===3?c.branch_code:i===4?c.area_code:i===5?c.package_name:i===8?c.phone:i===10?c.whatsapp:i===11?c.address:i===40?c.join_date:i===41?c.billing_day:i===42?c.status:i===43?c.active_period:''))]; res.statusCode=200; res.setHeader('Content-Type','text/csv; charset=utf-8'); res.setHeader('Content-Disposition','attachment; filename="pelanggan-wangonnet.csv"'); return res.end(rows.map(r=>r.map(csvEscape).join(',')).join('\r\n')); } const sheetRows = await googleRows().catch(() => null); const safeSheetRows = sheetRows ? sheetRows.map((row) => row.map((value, index) => index === 20 ? (value ? '••••••' : '') : value)) : null; return json(res,200,{customers,count:customers.length,headers:HEADERS,sheetRows:safeSheetRows}); } catch(e) { return json(res,500,{error:e.message}); } }
   if(req.method!=='POST') return json(res,405,{error:'Method tidak diizinkan'});
-  try { const body=typeof req.body==='string'?JSON.parse(req.body):(req.body||{}); let rows=body.rows;
-    if(body.action==='google-import') rows=await googleRows();
-    if(!Array.isArray(rows)) return json(res,400,{error:'Data baris import tidak valid'});
-    const result=await importRows(rows); return json(res,200,{ok:true,...result});
-  } catch(e) { return json(res,500,{error:e.message}); }
+  try { const body=typeof req.body==='string'?JSON.parse(req.body):(req.body||{}); let rows=body.rows; if(body.action==='google-import') rows=await googleRows(); if(!Array.isArray(rows)) return json(res,400,{error:'Data baris import tidak valid'}); const result=await importRows(rows); return json(res,200,{ok:true,...result}); } catch(e) { return json(res,500,{error:e.message}); }
 };
 module.exports.HEADERS=HEADERS;
 module.exports.csvEscape=csvEscape;
