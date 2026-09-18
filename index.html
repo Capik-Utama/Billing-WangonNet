@@ -42,7 +42,7 @@
     .notice { background: #fff; border-left: 5px solid #d52f3a; border-radius: 10px; padding: 12px 14px; margin: 0 0 18px; color: #9f1823; font-weight: 700; line-height: 1.5; box-shadow: 0 2px 8px rgba(40,50,70,.06); }
     .promo { display: inline-flex; align-items: center; gap: 9px; background: #198f43; color: #fff; font-weight: 800; border-radius: 10px; padding: 12px 16px; margin-bottom: 18px; box-shadow: var(--shadow); }
     .promo:hover, .promo:focus-visible { background: #126c32; outline: 3px solid #8be2a8; outline-offset: 2px; }
-    .cards { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; }
+    .cards { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 16px; }
     .card { min-height: 158px; border-radius: 17px; overflow: hidden; display: flex; flex-direction: column; justify-content: space-between; box-shadow: var(--shadow); color: #fff; }
     .card-body { padding: 21px 18px 16px; text-align: center; flex: 1; display: flex; flex-direction: column; justify-content: center; gap: 9px; }
     .card-value { font-size: clamp(21px, 3vw, 28px); font-weight: 800; letter-spacing: .01em; }
@@ -67,7 +67,7 @@
       .intro { display: block; }
       .status { display: inline-block; margin-top: 12px; }
       .notice { font-size: 13px; }
-      .cards { gap: 12px; }
+      .cards { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
       .card { min-height: 170px; border-radius: 15px; }
       .card-body { padding: 17px 9px 13px; }
       .card-value { font-size: 20px; }
@@ -112,6 +112,8 @@
         <article class="card" data-color><div class="card-body"><div class="card-value">0</div><div class="card-label">Ticket Dalam Penanganan</div></div><a class="card-action" href="#ticket">Selengkapnya ➜</a></article>
         <article class="card" data-color><div class="card-body"><div class="card-value">Rp. ***** | Rp. *****</div><div class="card-label">Pemasukan Bulan ini | Pemasukan Hari ini<br><br>Rp. *****<br>Pengeluaran Bulan ini<br><br>Rp. ***.***<br>Balance Bulan ini</div></div><a class="card-action" href="#keuangan">Selengkapnya ➜</a></article>
         <article class="card" data-color><div class="card-body"><div class="card-value">745<br><small>Status Langganan</small><br>717<br><small>Status On</small><br>28<br><small>Status Off</small></div></div><a class="card-action" href="#status">Selengkapnya ➜</a></article>
+        <article class="card" data-color><div class="card-body"><div class="card-value">0</div><div class="card-label">Ticket Permintaan Aktivasi</div></div><a class="card-action" href="#ticket">Selengkapnya ➜</a></article>
+        <article class="card" data-color><div class="card-body"><div class="card-value">—</div><div class="card-label">Status WAGW Beta Disconnected</div></div><a class="card-action" href="#pengaturan">Selengkapnya ➜</a></article>
       </section>
       <section class="details">
         <article class="detail" id="pelanggan"><h3>Data Pelanggan</h3><p>Kelola data pelanggan, paket layanan, dan status berlangganan.</p></article>
