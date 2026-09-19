@@ -147,6 +147,22 @@
     .package-table td.number-cell { text-align: right; }
     .package-table .formula-cell { background: #fff8f3; color: #6b7280; }
     .sheet-actions-note { color: var(--muted); font-size: 12px; margin: 0 0 10px; }
+    .reference-panel { margin-top: 4px; }
+    .reference-head { display:flex; align-items:flex-start; justify-content:space-between; gap:18px; margin-bottom:18px; }
+    .reference-head h2 { margin:0 0 6px; }
+    .reference-head p { margin:0; color:var(--muted); }
+    .reference-actions { display:flex; gap:8px; flex-wrap:wrap; }
+    .reference-actions button { border:1px solid var(--line); border-radius:8px; background:#fff; color:var(--ink); padding:9px 13px; font:inherit; font-weight:700; cursor:pointer; }
+    .reference-actions button:hover,.reference-actions button:focus-visible { border-color:var(--accent); color:var(--accent); outline:none; }
+    .reference-status { min-height:22px; color:var(--muted); margin-bottom:10px; }
+    .reference-table-wrap { overflow:auto; border:1px solid var(--line); border-radius:11px; background:#fff; }
+    .reference-table { border-collapse:collapse; min-width:720px; width:100%; font-size:13px; }
+    .reference-table th,.reference-table td { padding:11px 12px; border-bottom:1px solid #e6eef8; text-align:left; white-space:nowrap; }
+    .reference-table th { background:#eef6ff; color:var(--ink); font-weight:800; }
+    .reference-table tr:hover td { background:#f8fbff; }
+    .reference-empty { padding:28px; text-align:center; color:var(--muted); }
+    @media (max-width:760px) { .reference-head { display:block; } .reference-actions { margin-top:14px; } }
+
 
     .customer-panel { margin-top: 0; }
     .customer-panel .customer-head { align-items: center; }
@@ -203,7 +219,7 @@
       <div class="brand"><small>Dashboard administrator</small><strong>WangonNet</strong></div>
       <nav>
         <div class="nav-group"><div class="nav-label">Dashboard</div><div class="nav-links"><a href="#dashboard" aria-current="page">Dashboard</a><a href="#dashboard-mitra">Dashboard Mitra</a><a href="#dashboard-voucher">Dashboard Voucher</a><a href="#dashboard-mapping">Dashboard Mapping</a></div></div>
-        <details class="nav-group nav-folder"><summary class="nav-label">Kelola Data</summary><div class="nav-links"><a href="#pelanggan">Data Pelanggan</a><a href="#kartu-member">Data Kartu Member</a><a href="#perusahaan">Data Perusahaan</a><a href="#tipe-pembayaran">Data Tipe Pembayaran</a><a href="#notifikasi">Data Notifikasi</a><a href="#router">Data Router</a><a href="#rekening">Data Rekening</a></div></details>
+        <details class="nav-group nav-folder"><summary class="nav-label">Kelola Data</summary><div class="nav-links"><a href="#pelanggan">Data Pelanggan</a><a href="#odp">Data ODP</a><a href="#area">Data Area</a><a href="#paket">Data Paket</a><a href="#kartu-member">Data Kartu Member</a><a href="#perusahaan">Data Perusahaan</a><a href="#tipe-pembayaran">Data Tipe Pembayaran</a><a href="#notifikasi">Data Notifikasi</a><a href="#router">Data Router</a><a href="#rekening">Data Rekening</a></div></details>
         <div class="nav-group"><div class="nav-links"><a href="#voucher">Voucher</a><a href="#laporan">Laporan</a><a href="#users">User</a></div><details class="theme-settings" id="tema"><summary>🎨 Tema</summary><div class="theme-options" aria-label="Pilihan tema"><button class="theme-option" type="button" data-theme="biru">● Biru</button><button class="theme-option" type="button" data-theme="hijau">● Hijau</button><button class="theme-option" type="button" data-theme="ping">● Pink</button><button class="theme-option" type="button" data-theme="gelap">◐ Gelap</button></div></details><div class="nav-links"><a href="#logout">Logout</a></div></div>
       </nav>
     </aside>
@@ -235,6 +251,19 @@
         </div>
         <div class="customer-status" id="customerStatus" role="status"></div>
         <div class="customer-table-wrap"><table class="customer-table"><thead id="customerHead"></thead><tbody id="customerBody"></tbody></table><div class="empty-customers" id="customerEmpty" hidden>Tidak ada data pelanggan.</div></div><div class="pagination" id="customerPagination"></div>
+      </section>
+
+      <section class="page-view reference-panel" id="odp" hidden aria-labelledby="odpTitle">
+        <div class="reference-head"><div><h2 id="odpTitle">Data ODP</h2><p>Daftar Optical Distribution Point yang tersimpan di Supabase.</p></div><div class="reference-actions"><button type="button" data-reference-refresh="odp">↻ Muat ulang</button></div></div>
+        <div class="reference-status" id="odpStatus" role="status"></div><div class="reference-table-wrap"><table class="reference-table"><thead id="odpHead"></thead><tbody id="odpBody"></tbody></table><div class="reference-empty" id="odpEmpty" hidden>Tidak ada data ODP.</div></div>
+      </section>
+      <section class="page-view reference-panel" id="area" hidden aria-labelledby="areaTitle">
+        <div class="reference-head"><div><h2 id="areaTitle">Data Area</h2><p>Daftar area layanan dan kode cabangnya.</p></div><div class="reference-actions"><button type="button" data-reference-refresh="area">↻ Muat ulang</button></div></div>
+        <div class="reference-status" id="areaStatus" role="status"></div><div class="reference-table-wrap"><table class="reference-table"><thead id="areaHead"></thead><tbody id="areaBody"></tbody></table><div class="reference-empty" id="areaEmpty" hidden>Tidak ada data area.</div></div>
+      </section>
+      <section class="page-view reference-panel" id="paket" hidden aria-labelledby="paketTitle">
+        <div class="reference-head"><div><h2 id="paketTitle">Data Paket</h2><p>Daftar paket internet, harga, dan profil MikroTik.</p></div><div class="reference-actions"><button type="button" data-reference-refresh="paket">↻ Muat ulang</button></div></div>
+        <div class="reference-status" id="paketStatus" role="status"></div><div class="reference-table-wrap"><table class="reference-table"><thead id="paketHead"></thead><tbody id="paketBody"></tbody></table><div class="reference-empty" id="paketEmpty" hidden>Tidak ada data paket.</div></div>
       </section>
       <footer>© 2026 WangonNet · Dashboard e-Billing</footer>
     </main>
@@ -288,17 +317,37 @@
     };
     const loadCustomers = async () => { try { const billing=window.billingState || await (await fetch('/api/billing',{cache:'no-store'})).json(); customerHeaders=['NO','Nama','Kode Pelanggan','Cabang','Area','Paket Internet','Harga','ODP','Port ODP','Status Tagihan','Sisa Tagihan']; customers=(billing.customers||[]).map((customer)=>({sheet_row:[customer.source_no,customer.name,customer.customer_code,customer.branch_code,customer.area_code,customer.package_name,customer.package.price,customer.odp_code,customer.odp_port,customer.billing.payment_status,customer.billing.remaining_amount], billing:customer.billing})); renderCustomers(); } catch(e) { setCustomerStatus(e.message,true); } };
     const dashboardPage = document.getElementById('dashboard');
-    const showDashboard = () => { customerPanel.hidden=true; dashboardPage.hidden=false; history.replaceState(null, '', '#dashboard'); };
-    const showCustomers = () => { dashboardPage.hidden=true; customerPanel.hidden=false; history.replaceState(null, '', '#pelanggan'); loadCustomers(); };
+    const referenceConfig = {
+      odp: { columns: [['odp_code','Kode ODP'],['odp_name','Nama ODP'],['area_code','Kode Area'],['capacity','Kapasitas'],['used_ports','Port Terpakai'],['location_name','Lokasi']] },
+      area: { columns: [['area_code','Kode Area'],['area_name','Nama Area'],['area_abbreviation','Singkatan'],['branch_code','Kode Cabang']] },
+      paket: { columns: [['package_code','Kode Paket'],['package_name','Nama Paket'],['price','Harga'],['mikrotik_profile_name','Profil MikroTik'],['download_max_limit_mbps','Download Maks. (Mbps)'],['upload_max_limit_mbps','Upload Maks. (Mbps)']] }
+    };
+    const referencePanels = [...document.querySelectorAll('.reference-panel')];
+    const hideAllPages = () => { dashboardPage.hidden=true; customerPanel.hidden=true; referencePanels.forEach(panel=>{panel.hidden=true;}); };
+    const showDashboard = () => { hideAllPages(); dashboardPage.hidden=false; history.replaceState(null, '', '#dashboard'); };
+    const showCustomers = () => { hideAllPages(); customerPanel.hidden=false; history.replaceState(null, '', '#pelanggan'); loadCustomers(); };
+    const formatReferenceValue = (key, value) => key === 'price' ? new Intl.NumberFormat('id-ID',{style:'currency',currency:'IDR',maximumFractionDigits:0}).format(Number(value||0)) : (value ?? '');
+    const loadReference = async (type) => {
+      const config=referenceConfig[type], head=document.getElementById(`${type}Head`), body=document.getElementById(`${type}Body`), empty=document.getElementById(`${type}Empty`), status=document.getElementById(`${type}Status`);
+      status.textContent='Memuat data dari Supabase…'; empty.hidden=true; body.innerHTML=''; head.innerHTML='';
+      try { const response=await fetch(`/api/reference-data?type=${encodeURIComponent(type)}`,{cache:'no-store'}); const result=await response.json(); if(!response.ok) throw new Error(result.error||'Data tidak dapat dimuat');
+        head.innerHTML=`<tr>${config.columns.map(([,label])=>`<th>${escapeCell(label)}</th>`).join('')}</tr>`;
+        body.innerHTML=(result.data||[]).map(row=>`<tr>${config.columns.map(([key])=>`<td>${escapeCell(formatReferenceValue(key,row[key]))}</td>`).join('')}</tr>`).join('');
+        empty.hidden=(result.data||[]).length>0; status.textContent=`${result.count||0} data tersedia.`;
+      } catch(error) { status.textContent=error.message; }
+    };
+    const showReference = (type) => { hideAllPages(); const panel=document.getElementById(type); panel.hidden=false; history.replaceState(null, '', `#${type}`); loadReference(type); };
     document.querySelectorAll('a[href="#pelanggan"]').forEach(a=>a.addEventListener('click',e=>{e.preventDefault();showCustomers();}));
     document.querySelectorAll('a[href="#dashboard"]').forEach(a=>a.addEventListener('click',e=>{e.preventDefault();showDashboard();}));
+    ['odp','area','paket'].forEach(type=>document.querySelectorAll(`a[href="#${type}"]`).forEach(a=>a.addEventListener('click',e=>{e.preventDefault();showReference(type);})));
+    document.querySelectorAll('[data-reference-refresh]').forEach(button=>button.addEventListener('click',()=>loadReference(button.dataset.referenceRefresh)));
     const customerCard = document.getElementById('customerCard');
     customerCard.addEventListener('click', (event) => { if (!event.target.closest('a')) showCustomers(); });
     customerCard.addEventListener('keydown', (event) => { if ((event.key === 'Enter' || event.key === ' ') && !event.target.closest('a')) { event.preventDefault(); showCustomers(); } });
     document.getElementById('backDashboard').addEventListener('click', showDashboard);
     customerBody.addEventListener('click', (event) => { const button=event.target.closest('.row-action'); if (!button) return; const labels={edit:'Edit pelanggan',payment:'Pembayaran',activate:'Aktifkan pelanggan',deactivate:'Nonaktifkan pelanggan',delete:'Hapus pelanggan'}; setCustomerStatus(`${labels[button.dataset.action]}: aksi siap diproses untuk pelanggan ini.`); });
     loadCustomers();
-    if (location.hash === '#pelanggan') showCustomers();
+    if (location.hash === '#pelanggan') showCustomers(); else if (['odp','area','paket'].includes(location.hash.slice(1))) showReference(location.hash.slice(1));
   </script>
 </body>
 </html>
