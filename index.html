@@ -244,12 +244,16 @@
     .customer-detail-actions button { border:1px solid var(--line); border-radius:8px; padding:10px 14px; font:inherit; font-weight:800; cursor:pointer; }
     .customer-detail-actions .primary { background:var(--accent); color:var(--accent-ink); border-color:var(--accent); }
     .customer-detail-actions .danger { background:#b42318; color:#fff; border-color:#b42318; }
+    #customerStatusDialog { background:#fff; color:#102a43; }
+    #customerStatusDialog .customer-detail-subtitle { color:#36536f; }
+    #customerStatusDialog .customer-detail-actions .primary { background:#1769aa; color:#fff; border-color:#1769aa; }
+    #customerStatusDialog .customer-detail-actions button:not(.primary) { background:#f8fbff; color:#102a43; border-color:#b9d4f5; }
     .customer-status-names { display:grid; gap:6px; max-height:220px; overflow:auto; margin:0; padding:0 2px; list-style:none; }
-    .customer-status-summary { width:100%; border:1px solid var(--line); border-radius:7px; padding:9px 10px; background:#f8fbff; color:var(--ink); text-align:left; font:inherit; font-weight:800; cursor:pointer; }
-    .customer-status-summary:hover,.customer-status-summary:focus-visible { border-color:var(--accent); color:var(--accent); outline:2px solid rgba(8,125,240,.2); }
-    .customer-status-single { margin:0 0 2px; padding:9px 10px; border:1px solid var(--line); border-radius:7px; background:#f8fbff; color:var(--ink); font-weight:800; }
-    .customer-status-name { width:100%; border:1px solid var(--line); border-radius:7px; padding:9px 10px; background:#f8fbff; color:var(--ink); text-align:left; font:inherit; font-weight:700; cursor:pointer; }
-    .customer-status-name:hover,.customer-status-name:focus-visible { border-color:var(--accent); color:var(--accent); outline:2px solid rgba(8,125,240,.2); }
+    .customer-status-summary { width:100%; border:1px solid #b9d4f5; border-radius:7px; padding:9px 10px; background:#f8fbff; color:#102a43 !important; -webkit-text-fill-color:#102a43; text-align:left; font:inherit; font-weight:800; cursor:pointer; }
+    .customer-status-summary:hover,.customer-status-summary:focus-visible { border-color:#1769aa; color:#1769aa !important; -webkit-text-fill-color:#1769aa; outline:2px solid rgba(8,125,240,.2); }
+    .customer-status-single { margin:0 0 2px; padding:9px 10px; border:1px solid #b9d4f5; border-radius:7px; background:#f8fbff; color:#102a43; font-weight:800; }
+    .customer-status-name { width:100%; border:1px solid #b9d4f5; border-radius:7px; padding:9px 10px; background:#f8fbff; color:#102a43 !important; -webkit-text-fill-color:#102a43; text-align:left; font:inherit; font-weight:700; cursor:pointer; }
+    .customer-status-name:hover,.customer-status-name:focus-visible { border-color:#1769aa; color:#1769aa !important; -webkit-text-fill-color:#1769aa; outline:2px solid rgba(8,125,240,.2); }
     .reference-password-label { display:grid; gap:7px; color:var(--muted); font-size:13px; font-weight:800; }
     .reference-password-label input { width:100%; border:1px solid var(--line); border-radius:7px; padding:9px 10px; color:var(--ink); background:#fff; font:inherit; }
     .reference-password-label input:focus { outline:2px solid rgba(8,125,240,.2); border-color:var(--accent); }
