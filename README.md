@@ -45,6 +45,3 @@ Langkah setup service account:
 
 Jangan commit file JSON key ke repository dan jangan menaruh private key di `index.html`.
 
-## Data Akun
-
-Menu `Kelola Data → Data Akun` hanya menyediakan pengaturan target file Spreadsheet. Login Google OAuth sudah dihapus dari aplikasi. Koneksi Spreadsheet tetap menggunakan service account atau access token server-side melalui environment yang didokumentasikan pada bagian Modul Data Paket.
