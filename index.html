@@ -288,6 +288,48 @@
       .row-action svg { width:10px; height:10px; }
       .row-action:focus-visible { outline-width:2px; outline-offset:1px; box-shadow:0 0 0 3px var(--accent); }
     }
+    /* Compact layout: keep information dense without removing usable touch targets. */
+    .main { padding:clamp(10px, 1.5vw, 18px); }
+    .sidebar { padding:16px 12px; }
+    .brand { padding:8px 10px 14px; margin-bottom:12px; }
+    .nav-group { margin-bottom:12px; }
+    .nav-links { gap:3px; margin-top:5px; }
+    .nav-links a { padding:8px 10px; }
+    .intro { gap:10px; margin-bottom:10px; }
+    .notice { padding:10px 12px; margin-bottom:10px; }
+    .promo { padding:10px 14px; margin-bottom:10px; }
+    .cards { gap:10px; }
+    .card { min-height:132px; }
+    .finance-card { min-height:172px; }
+    .card-body { padding:15px 12px 11px; gap:6px; }
+    .card-action { padding:10px 8px; }
+    .details { margin-top:14px; gap:10px; }
+    .detail { padding:14px; }
+    footer { padding:14px 0 4px; }
+    .reference-head { gap:12px; margin-bottom:10px; }
+    .reference-actions { gap:6px; }
+    .reference-status { min-height:18px; margin-bottom:6px; }
+    .reference-table th, .reference-table td { padding:8px 9px; }
+    .customer-panel { margin-top:10px; padding:clamp(10px, 1.5vw, 16px); }
+    .customer-head { gap:10px; margin-bottom:10px; }
+    .customer-head p { margin-top:4px; }
+    .customer-search { margin-bottom:8px; }
+    .customer-table th, .customer-table td { padding:7px 8px; }
+    .pagination { gap:4px; margin-top:8px; }
+    @media (max-width:760px) {
+      .main { padding:10px 8px 16px; }
+      .topbar { gap:10px; }
+      .intro { margin-bottom:8px; }
+      .cards { gap:6px; }
+      .card { min-height:112px; }
+      .finance-card { min-height:158px; }
+      .card-body { padding:10px 4px 7px; }
+      .details { margin-top:10px; gap:8px; }
+      .detail { padding:12px; }
+      .customer-panel { margin-top:8px; padding:10px; }
+      .customer-actions { margin-top:8px; }
+      .reference-actions { margin-top:8px; }
+    }
   </style>
 </head>
 <body>
