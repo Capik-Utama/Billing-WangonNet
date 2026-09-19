@@ -15,4 +15,7 @@ assert.equal(row.billing_day, 15);
 assert.equal(row._network.onu_attenuation, -7633714399293010);
 assert.equal(row.raw_record.Latitude, '-7.633.714.399.293.010');
 assert.equal(row._network.raw_record['Redaman ONU'], '-7.633.714.399.293.010');
+
+const [missingName] = mapRows('customers', { rows: [{ 'Kode Pelanggan': 'C-2' }] });
+assert.equal(missingName.name, '');
 console.log('workbook import numeric tests: OK');
