@@ -167,7 +167,8 @@
     .customer-panel { margin-top: 0; }
     .customer-panel .customer-head { align-items: center; }
     .customer-table { min-width: 1200px; }
-    .customer-table th:last-child, .customer-table td:last-child { width: 154px; text-align: right; }
+    .customer-table th:first-child, .customer-table td:first-child { width: 154px; text-align: left; position: sticky; left: 0; z-index: 2; background: #fff; }
+    .customer-table th:first-child { background:#eef6ff; }
     .row-actions { display: inline-flex; align-items: center; justify-content: flex-end; gap: 4px; }
     .row-action { width: 30px; height: 30px; padding: 0; border: 1px solid var(--line); border-radius: 7px; background: #f8fbff; color: var(--ink); cursor: pointer; font-size: 15px; line-height: 1; }
     .row-action:hover, .row-action:focus-visible { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); outline: none; }
@@ -208,6 +209,18 @@
     .delete-dialog-actions { display:flex; justify-content:flex-end; gap:8px; }
     .delete-dialog-actions button { border:1px solid var(--line); border-radius:8px; padding:10px 14px; font:inherit; font-weight:800; cursor:pointer; }
     .delete-dialog-actions .danger { background:#b42318; color:#fff; border-color:#b42318; }
+    .customer-detail-dialog { width:min(860px, calc(100vw - 28px)); max-height:88vh; border:0; border-radius:16px; padding:0; color:var(--ink); box-shadow:0 18px 60px rgba(0,0,0,.3); }
+    .customer-detail-dialog::backdrop { background:rgba(16,42,67,.58); }
+    .customer-detail-form { padding:24px; }
+    .customer-detail-form h3 { margin:0 0 6px; }
+    .customer-detail-subtitle { margin:0 0 16px; color:var(--muted); }
+    .customer-detail-grid { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:9px 14px; max-height:62vh; overflow:auto; padding:2px; }
+    .customer-detail-item { min-width:0; padding:10px 11px; border:1px solid var(--line); border-radius:9px; background:#f8fbff; }
+    .customer-detail-item dt { color:var(--muted); font-size:11px; font-weight:800; text-transform:uppercase; letter-spacing:.03em; }
+    .customer-detail-item dd { margin:4px 0 0; white-space:pre-wrap; overflow-wrap:anywhere; font-size:14px; }
+    .customer-detail-actions { display:flex; justify-content:flex-end; margin-top:18px; }
+    .customer-detail-actions button { border:1px solid var(--line); border-radius:8px; padding:10px 14px; font:inherit; font-weight:800; cursor:pointer; }
+    @media (max-width:640px) { .customer-detail-grid { grid-template-columns:1fr; } }
     .loading-dialog { border:0; border-radius:16px; padding:0; width:min(360px, calc(100vw - 32px)); box-shadow:0 18px 60px rgba(0,0,0,.3); color:var(--ink); }
     .loading-dialog::backdrop { background:rgba(16,42,67,.58); }
     .loading-content { display:grid; justify-items:center; gap:12px; padding:28px 24px; text-align:center; }
@@ -279,6 +292,14 @@
           </div>
         </div>
         <div class="customer-status" id="customerStatus" role="status"></div>
+        <dialog class="customer-detail-dialog" id="customerDetailDialog" aria-labelledby="customerDetailTitle">
+          <form method="dialog" class="customer-detail-form">
+            <h3 id="customerDetailTitle">Detail Pelanggan</h3>
+            <p class="customer-detail-subtitle" id="customerDetailSubtitle">Seluruh informasi sesuai kolom Excel.</p>
+            <dl class="customer-detail-grid" id="customerDetailGrid"></dl>
+            <div class="customer-detail-actions"><button type="button" id="closeCustomerDetail">Tutup</button></div>
+          </form>
+        </dialog>
         <dialog class="import-preview-dialog" id="importPreviewDialog" aria-labelledby="importPreviewTitle">
           <form method="dialog" class="import-preview-form">
             <h3 id="importPreviewTitle">Pratinjau Import</h3>
@@ -369,6 +390,10 @@
     const dataLoadingDialog = document.getElementById('dataLoadingDialog');
     const dataLoadingTitle = document.getElementById('dataLoadingTitle');
     const dataLoadingMessage = document.getElementById('dataLoadingMessage');
+    const customerDetailDialog = document.getElementById('customerDetailDialog');
+    const customerDetailGrid = document.getElementById('customerDetailGrid');
+    const customerDetailSubtitle = document.getElementById('customerDetailSubtitle');
+    const closeCustomerDetail = document.getElementById('closeCustomerDetail');
     const showDataLoading = (title, message) => { dataLoadingTitle.textContent=title; dataLoadingMessage.textContent=message; if (!dataLoadingDialog.open) dataLoadingDialog.showModal(); };
     const hideDataLoading = () => { if (dataLoadingDialog.open) dataLoadingDialog.close(); };
     deleteAllDataButton.addEventListener('click', () => { deleteAllDataPassword.value=''; deleteAllDataDialog.showModal(); setTimeout(() => deleteAllDataPassword.focus(), 0); });
@@ -430,13 +455,28 @@
     const setCustomerStatus = (text, error=false) => { customerStatus.textContent=text; customerStatus.style.color=error?'#b42318':'var(--muted)'; };
     const escapeCell = (value) => String(value ?? '').replace(/[&<>"']/g, (char) => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[char]));
     const customerRow = (customer) => Array.isArray(customer.sheet_row) ? customer.sheet_row : customerHeaders.map((_, i) => i===0?customer.source_no:i===1?customer.name:i===2?customer.customer_code:i===3?customer.branch_code:i===4?customer.area_code:i===5?customer.package_name:i===8?customer.phone:i===10?customer.whatsapp:i===11?customer.address:i===40?customer.join_date:i===41?customer.billing_day:i===42?customer.status:i===43?customer.active_period:'');
+    const customerDetailFields = (customer, network) => [
+      ['NO', customer.source_no], ['Nama', customer.name], ['Kode Pelanggan', customer.customer_code], ['Cabang', customer.branch_code], ['Area', customer.area_code], ['Paket Internet', customer.package_name], ['Harga', customer.billing?.amount ?? customer.package?.price], ['Sales', customer.sales_name], ['No KTP', customer.national_id], ['No HP', customer.phone], ['Email', customer.email], ['WhatsApp', customer.whatsapp], ['Alamat', customer.address], ['RT', customer.rt], ['RW', customer.rw], ['Desa/Kelurahan', customer.village], ['Kecamatan', customer.district], ['Kabupaten/Kota', customer.city_regency], ['Latitude', customer.latitude], ['Longitude', customer.longitude], ['PPPoE Username', network.pppoe_username], ['PPPoE Password', network.pppoe_password], ['ONU Serial', network.onu_serial], ['OLT', network.olt], ['PON', network.pon], ['VLAN', network.vlan], ['Formula ODP', customer.source_formulas?.odp_code], ['ODP', network.odp_code], ['Port ODP', network.odp_port], ['Tipe Modem', network.modem_type], ['MAC Address', network.mac_address], ['IP Address', network.ip_address], ['Redaman ONU', network.onu_attenuation], ['Redaman ODP', network.odp_attenuation], ['RX ONT', network.rx_ont], ['RX ODP', network.rx_odp], ['Speedtest Download', ''], ['Speedtest Upload', ''], ['Ping (ms)', ''], ['Jitter (ms)', ''], ['Catatan Test', ''], ['Tanggal Bergabung', customer.join_date], ['Hari Tagihan', customer.billing_day], ['Status', customer.status], ['Masa Aktif', customer.active_period]
+    ];
+    const showCustomerDetail = async (summaryCustomer) => {
+      showDataLoading('Memuat detail pelanggan…','Mengambil seluruh informasi pelanggan.');
+      try {
+        const response=await fetch('/api/customers',{cache:'no-store'}); const result=await response.json(); if(!response.ok) throw new Error(result.error||'Detail pelanggan tidak tersedia');
+        const full=(result.customers||[]).find((item)=>item.customer_code===summaryCustomer.customer_code) || summaryCustomer;
+        const network=Array.isArray(full.customer_network)?(full.customer_network[0]||{}):(full.customer_network||{});
+        customerDetailSubtitle.textContent=`${full.name||'(Tanpa nama)'} · ${full.customer_code||'Tanpa kode'} · seluruh kolom pelanggan Excel`;
+        customerDetailGrid.innerHTML=customerDetailFields({...summaryCustomer,...full},network).map(([label,value])=>`<div class="customer-detail-item"><dt>${escapeCell(label)}</dt><dd>${escapeCell(value===''||value===null||value===undefined?'—':value)}</dd></div>`).join('');
+        customerDetailDialog.showModal();
+      } catch(error) { setCustomerStatus(error.message,true); } finally { hideDataLoading(); }
+    };
+    closeCustomerDetail.addEventListener('click', () => customerDetailDialog.close());
     const renderCustomers = () => {
       customerCount.textContent=customers.length.toLocaleString('id-ID'); customerSubtitle.textContent=`${customers.length.toLocaleString('id-ID')} pelanggan dari database`;
-      customerHead.innerHTML='<tr>'+customerHeaders.map((h,i)=>`<th><button type="button" class="sort-header" data-sort-index="${i}" title="Sortir berdasarkan ${escapeCell(h || `Kolom ${i+1}`)}">${escapeCell(h || `Kolom ${i+1}`)} <span aria-hidden="true">${sortIndex===i?(sortDirection===1?'▲':'▼'):'↕'}</span></button></th>`).join('')+'<th>Aksi</th></tr>';
+      customerHead.innerHTML='<tr><th>Aksi</th>'+customerHeaders.map((h,i)=>`<th><button type="button" class="sort-header" data-sort-index="${i}" title="Sortir berdasarkan ${escapeCell(h || `Kolom ${i+1}`)}">${escapeCell(h || `Kolom ${i+1}`)} <span aria-hidden="true">${sortIndex===i?(sortDirection===1?'▲':'▼'):'↕'}</span></button></th>`).join('')+'</tr>';
       const ordered = customers.map((customer, originalIndex) => ({customer, originalIndex}));
       if (sortIndex !== null) ordered.sort((a,b) => { const av=String(customerRow(a.customer)[sortIndex]??'').toLowerCase(); const bv=String(customerRow(b.customer)[sortIndex]??'').toLowerCase(); return av.localeCompare(bv,'id',{numeric:true,sensitivity:'base'}) * sortDirection || a.originalIndex-b.originalIndex; });
       const pageCount=Math.max(1,Math.ceil(ordered.length/customerPageSize)); customerPage=Math.min(customerPage,pageCount); const visible=ordered.slice((customerPage-1)*customerPageSize,customerPage*customerPageSize);
-      customerBody.innerHTML=visible.map(({customer})=>{ const row=customerRow(customer); return `<tr>${customerHeaders.map((header,i)=>{ const raw=row[i]??''; const value=header==='PPPoE Password'&&raw?'••••••':raw; return `<td title="${header==='PPPoE Password'?'PPP password disamarkan demi keamanan':escapeCell(raw)}">${escapeCell(value)}</td>`; }).join('')}<td><span class="row-actions"><button type="button" class="row-action" data-action="edit" title="Edit pelanggan" aria-label="Edit pelanggan">✎</button><button type="button" class="row-action" data-action="payment" title="Pembayaran" aria-label="Pembayaran">▣</button><button type="button" class="row-action" data-action="activate" title="Aktifkan pelanggan" aria-label="Aktifkan pelanggan">✓</button><button type="button" class="row-action" data-action="deactivate" title="Nonaktifkan pelanggan" aria-label="Nonaktifkan pelanggan">⏻</button><button type="button" class="row-action row-action-delete" data-action="delete" title="Hapus pelanggan" aria-label="Hapus pelanggan">⌫</button></span></td></tr>`; }).join(''); customerEmpty.hidden=customers.length>0;
+      customerBody.innerHTML=visible.map(({customer})=>{ const row=customerRow(customer); return `<tr data-customer-code="${escapeCell(customer.customer_code)}"><td><span class="row-actions"><button type="button" class="row-action" data-action="edit" title="Lihat detail pelanggan" aria-label="Lihat detail pelanggan">✎</button><button type="button" class="row-action" data-action="payment" title="Pembayaran" aria-label="Pembayaran">▣</button><button type="button" class="row-action" data-action="activate" title="Aktifkan pelanggan" aria-label="Aktifkan pelanggan">✓</button><button type="button" class="row-action" data-action="deactivate" title="Nonaktifkan pelanggan" aria-label="Nonaktifkan pelanggan">⏻</button><button type="button" class="row-action row-action-delete" data-action="delete" title="Hapus pelanggan" aria-label="Hapus pelanggan">⌫</button></span></td>${customerHeaders.map((header,i)=>{ const raw=row[i]??''; const value=header==='PPPoE Password'&&raw?'••••••':raw; return `<td title="${header==='PPPoE Password'?'PPP password disamarkan demi keamanan':escapeCell(raw)}">${escapeCell(value)}</td>`; }).join('')}</tr>`; }).join(''); customerEmpty.hidden=customers.length>0;
       customerPagination.innerHTML=`<label>Per halaman <input id="customerPageSize" type="number" min="1" max="500" value="${customerPageSize}"></label><button type="button" data-page="prev">‹</button>${Array.from({length:pageCount},(_,i)=>`<button type="button" data-page="${i+1}" class="${customerPage===i+1?'active':''}">${i+1}</button>`).join('')}<button type="button" data-page="next">›</button>`; customerPagination.querySelector('#customerPageSize').addEventListener('change',(e)=>{customerPage=Math.max(1,Number(e.target.value)||10);renderCustomers();}); customerPagination.querySelectorAll('button').forEach((button)=>button.addEventListener('click',()=>{const target=button.dataset.page; if(target==='prev') customerPage=Math.max(1,customerPage-1); else if(target==='next') customerPage=Math.min(pageCount,customerPage+1); else customerPage=Number(target); renderCustomers();}));
       customerHead.querySelectorAll('.sort-header').forEach((button) => button.addEventListener('click', () => { const index=Number(button.dataset.sortIndex); if(sortIndex===index) sortDirection*=-1; else { sortIndex=index; sortDirection=1; } customerPage=1; renderCustomers(); }));
     };
@@ -470,7 +510,7 @@
     customerCard.addEventListener('click', (event) => { if (!event.target.closest('a')) showCustomers(); });
     customerCard.addEventListener('keydown', (event) => { if ((event.key === 'Enter' || event.key === ' ') && !event.target.closest('a')) { event.preventDefault(); showCustomers(); } });
     document.getElementById('backDashboard').addEventListener('click', showDashboard);
-    customerBody.addEventListener('click', (event) => { const button=event.target.closest('.row-action'); if (!button) return; const labels={edit:'Edit pelanggan',payment:'Pembayaran',activate:'Aktifkan pelanggan',deactivate:'Nonaktifkan pelanggan',delete:'Hapus pelanggan'}; setCustomerStatus(`${labels[button.dataset.action]}: aksi siap diproses untuk pelanggan ini.`); });
+    customerBody.addEventListener('click', (event) => { const button=event.target.closest('.row-action'); if (!button) return; const code=button.closest('tr')?.dataset.customerCode; const selected=customers.find((customer)=>customer.customer_code===code); if (button.dataset.action==='edit' && selected) return showCustomerDetail(selected); const labels={payment:'Pembayaran',activate:'Aktifkan pelanggan',deactivate:'Nonaktifkan pelanggan',delete:'Hapus pelanggan'}; setCustomerStatus(`${labels[button.dataset.action]||'Aksi'}: aksi siap diproses untuk pelanggan ini.`); });
     loadCustomers();
     if (location.hash === '#pelanggan') showCustomers(); else if (['odp','area','paket'].includes(location.hash.slice(1))) showReference(location.hash.slice(1));
   </script>
