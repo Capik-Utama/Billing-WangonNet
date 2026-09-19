@@ -272,6 +272,10 @@
     .customer-bulk-actions [data-bulk-action="activate"] { background:#93c5fd; color:#0b3d91; border-color:#60a5fa; }
     .customer-bulk-actions [data-bulk-action="deactivate"] { background:#facc15; color:#713f12; border-color:#ca8a04; }
     .customer-bulk-actions [data-bulk-action="delete"] { background:#dc2626; color:#fff; border-color:#b91c1c; }
+    .reference-toolbar { display:flex; align-items:center; justify-content:space-between; gap:8px; margin:0 0 8px; }
+    .reference-toolbar .reference-search { width:min(280px,48%); border:1px solid var(--line); border-radius:9px; padding:8px 10px; color:var(--ink); background:#fff; font:inherit; }
+    .reference-toolbar .reference-search:focus { outline:3px solid rgba(8,125,240,.18); border-color:var(--accent); }
+    .reference-pagination { margin-top:6px; }
     .empty-customers { padding:28px; text-align:center; color:var(--muted); }
     body.theme-gelap .login-card,
     body.theme-gelap .customer-panel,
@@ -308,6 +312,7 @@
       .customer-actions button, .file-label { flex:1 1 calc(50% - 8px); text-align:center; font-size:12px; }
       .customer-table th:first-child, .customer-table td:first-child { width:124px; }
       .customer-search input { width:min(240px, 55%); }
+      .reference-toolbar .reference-search { width:min(240px,55%); }
       .row-actions { gap:2px; }
       .row-action { width:20px; height:20px; border-width:1px; border-radius:4px; font-size:10px; }
       .row-action svg { width:10px; height:10px; }
@@ -541,15 +546,15 @@
 
       <section class="page-view reference-panel customer-panel" id="odp" hidden aria-labelledby="odpTitle">
         <div class="customer-head"><div class="customer-navigation"><button type="button" class="back-dashboard" data-reference-back>← Beranda</button><button type="button" class="primary" data-reference-add="odp">TAMBAH ODP</button></div><div><h2 id="odpTitle">Data ODP</h2><p>Daftar Optical Distribution Point yang tersimpan di Supabase.</p></div></div>
-        <div class="customer-status reference-status" id="odpStatus" role="status"></div><div class="customer-table-wrap reference-table-wrap"><table class="customer-table reference-table"><thead id="odpHead"></thead><tbody id="odpBody"></tbody></table><div class="empty-customers reference-empty" id="odpEmpty" hidden>Tidak ada data ODP.</div></div>
+        <div class="customer-status reference-status" id="odpStatus" role="status"></div><div class="reference-toolbar"><label class="select-all-control"><input type="checkbox" data-reference-select-all="odp" aria-label="Pilih semua ODP di halaman ini"><span id="odpSelectedCount">0 dipilih</span></label><input class="reference-search" id="odpSearch" type="search" placeholder="Cari ODP…" autocomplete="off"></div><div class="customer-table-wrap reference-table-wrap"><table class="customer-table reference-table"><thead id="odpHead"></thead><tbody id="odpBody"></tbody></table><div class="empty-customers reference-empty" id="odpEmpty" hidden>Tidak ada data ODP.</div></div><div class="pagination reference-pagination" id="odpPagination"></div>
       </section>
       <section class="page-view reference-panel customer-panel" id="area" hidden aria-labelledby="areaTitle">
         <div class="customer-head"><div class="customer-navigation"><button type="button" class="back-dashboard" data-reference-back>← Beranda</button><button type="button" class="primary" data-reference-add="area">TAMBAH AREA</button></div><div><h2 id="areaTitle">Data Area</h2><p>Daftar area layanan dan kode cabangnya.</p></div></div>
-        <div class="customer-status reference-status" id="areaStatus" role="status"></div><div class="customer-table-wrap reference-table-wrap"><table class="customer-table reference-table"><thead id="areaHead"></thead><tbody id="areaBody"></tbody></table><div class="empty-customers reference-empty" id="areaEmpty" hidden>Tidak ada data area.</div></div>
+        <div class="customer-status reference-status" id="areaStatus" role="status"></div><div class="reference-toolbar"><label class="select-all-control"><input type="checkbox" data-reference-select-all="area" aria-label="Pilih semua area di halaman ini"><span id="areaSelectedCount">0 dipilih</span></label><input class="reference-search" id="areaSearch" type="search" placeholder="Cari area…" autocomplete="off"></div><div class="customer-table-wrap reference-table-wrap"><table class="customer-table reference-table"><thead id="areaHead"></thead><tbody id="areaBody"></tbody></table><div class="empty-customers reference-empty" id="areaEmpty" hidden>Tidak ada data area.</div></div><div class="pagination reference-pagination" id="areaPagination"></div>
       </section>
       <section class="page-view reference-panel customer-panel" id="paket" hidden aria-labelledby="paketTitle">
         <div class="customer-head"><div class="customer-navigation"><button type="button" class="back-dashboard" data-reference-back>← Beranda</button><button type="button" class="primary" data-reference-add="paket">TAMBAH PAKET</button></div><div><h2 id="paketTitle">Data Paket</h2><p>Daftar paket internet, harga, dan profil MikroTik.</p></div></div>
-        <div class="customer-status reference-status" id="paketStatus" role="status"></div><div class="customer-table-wrap reference-table-wrap"><table class="customer-table reference-table"><thead id="paketHead"></thead><tbody id="paketBody"></tbody></table><div class="empty-customers reference-empty" id="paketEmpty" hidden>Tidak ada data paket.</div></div>
+        <div class="customer-status reference-status" id="paketStatus" role="status"></div><div class="reference-toolbar"><label class="select-all-control"><input type="checkbox" data-reference-select-all="paket" aria-label="Pilih semua paket di halaman ini"><span id="paketSelectedCount">0 dipilih</span></label><input class="reference-search" id="paketSearch" type="search" placeholder="Cari paket…" autocomplete="off"></div><div class="customer-table-wrap reference-table-wrap"><table class="customer-table reference-table"><thead id="paketHead"></thead><tbody id="paketBody"></tbody></table><div class="empty-customers reference-empty" id="paketEmpty" hidden>Tidak ada data paket.</div></div><div class="pagination reference-pagination" id="paketPagination"></div>
       </section>
       <dialog class="customer-detail-dialog" id="referenceDetailDialog" aria-labelledby="referenceDetailTitle">
         <form method="dialog" class="customer-detail-form" id="referenceDetailForm">
@@ -758,6 +763,10 @@
       paket: { label:'paket', columns: [['package_code','Kode Paket'],['package_name','Nama Paket'],['price','Harga'],['mikrotik_profile_name','Profil MikroTik'],['download_max_limit_mbps','Download Maks. (Mbps)'],['upload_max_limit_mbps','Upload Maks. (Mbps)']], fields: [['branch_code','Kode Cabang','text'],['package_code','Kode Paket','text'],['package_name','Nama Paket','text'],['price','Harga','number'],['mikrotik_profile_name','Profil MikroTik','text'],['download_max_limit_mbps','Download Maks. (Mbps)','number'],['upload_max_limit_mbps','Upload Maks. (Mbps)','number']] }
     };
     const referenceRows = { odp: [], area: [], paket: [] };
+    const referenceQuery = { odp: '', area: '', paket: '' };
+    const referencePage = { odp: 1, area: 1, paket: 1 };
+    const referencePageSize = { odp: 10, area: 10, paket: 10 };
+    const referenceSelected = { odp: new Set(), area: new Set(), paket: new Set() };
     const referenceDetailDialog = document.getElementById('referenceDetailDialog');
     const referenceDetailGrid = document.getElementById('referenceDetailGrid');
     const referenceDetailTitle = document.getElementById('referenceDetailTitle');
@@ -771,16 +780,20 @@
     const showDashboard = () => { hideAllPages(); dashboardPage.hidden=false; history.replaceState(null, '', '#dashboard'); };
     const showCustomers = () => { hideAllPages(); customerPanel.hidden=false; history.replaceState(null, '', '#pelanggan'); loadCustomers(); };
     const formatReferenceValue = (key, value) => key === 'price' ? new Intl.NumberFormat('id-ID',{style:'currency',currency:'IDR',maximumFractionDigits:0}).format(Number(value||0)) : (value ?? '');
+    const renderReference = (type) => {
+      const config=referenceConfig[type], rows=referenceRows[type], query=normalizeSearchText(referenceQuery[type]);
+      const filtered=rows.map((row,index)=>({row,index})).filter(({row})=>!query||normalizeSearchText(Object.values(row).join(' ')).includes(query));
+      const pageCount=Math.max(1,Math.ceil(filtered.length/referencePageSize[type])); referencePage[type]=Math.min(referencePage[type],pageCount); const start=(referencePage[type]-1)*referencePageSize[type]; const visible=filtered.slice(start,start+referencePageSize[type]);
+      const head=document.getElementById(`${type}Head`), body=document.getElementById(`${type}Body`), empty=document.getElementById(`${type}Empty`), status=document.getElementById(`${type}Status`), selected=referenceSelected[type];
+      const actionLabel=config.label; head.innerHTML=`<tr><th class="selection-cell"><input type="checkbox" data-reference-page-select-all="${type}" aria-label="Pilih semua ${actionLabel} di halaman ini"></th>${config.columns.map(([,label])=>`<th>${escapeCell(label)}</th>`).join('')}<th>Aksi</th></tr>`;
+      body.innerHTML=visible.map(({row,index})=>`<tr data-reference-type="${escapeCell(type)}" data-reference-index="${index}"><td class="selection-cell"><input type="checkbox" class="reference-row-checkbox" data-reference-select="${index}" aria-label="Pilih ${escapeCell(row[config.columns[0][0]]||actionLabel)}"${selected.has(String(row.id))?' checked':''}></td>${config.columns.map(([key])=>`<td>${escapeCell(formatReferenceValue(key,row[key]))}</td>`).join('')}<td><span class="row-actions"><button type="button" class="row-action" data-action="edit" title="Edit ${actionLabel}" aria-label="Edit ${actionLabel}">✎</button><button type="button" class="row-action row-action-delete" data-action="delete" title="Hapus ${actionLabel}" aria-label="Hapus ${actionLabel}"><svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true" focusable="false"><path fill="currentColor" d="M9 3h6l1 2h4v2H4V5h4l-1 2Zm-3 6h12l-1 12H7L6 9Zm3 2v8h2v-8H9Zm4 0v8h2v-8h-2Z"/></svg></button></span></td></tr>`).join('');
+      empty.hidden=filtered.length>0; empty.textContent=query?'Tidak ada data yang cocok dengan pencarian.':`Tidak ada data ${actionLabel}.`; status.textContent=query?`${filtered.length} hasil dari ${rows.length} data.`:`${rows.length} data tersedia.`; document.getElementById(`${type}SelectedCount`).textContent=`${selected.size.toLocaleString('id-ID')} dipilih`; const toolbarSelectAll=document.querySelector(`[data-reference-select-all="${type}"]`), filteredIds=filtered.map(({row})=>String(row.id)); toolbarSelectAll.checked=filteredIds.length>0&&filteredIds.every((id)=>selected.has(id)); toolbarSelectAll.indeterminate=filteredIds.some((id)=>selected.has(id))&&!toolbarSelectAll.checked;
+      const pageCodes=visible.map(({row})=>String(row.id)); const pageSelectAll=head.querySelector('[data-reference-page-select-all]'); pageSelectAll.checked=pageCodes.length>0&&pageCodes.every((id)=>selected.has(id)); pageSelectAll.indeterminate=pageCodes.some((id)=>selected.has(id))&&!pageSelectAll.checked; pageSelectAll.addEventListener('change',()=>{ pageCodes.forEach((id)=>pageSelectAll.checked?selected.add(id):selected.delete(id)); renderReference(type); });
+      const pageCandidates=[1,2,3,5,10,20,50,75,pageCount,referencePage[type]].filter((page,index,array)=>page>=1&&page<=pageCount&&array.indexOf(page)===index).sort((a,b)=>a-b); const pagination=document.getElementById(`${type}Pagination`); pagination.innerHTML=`<label>Per halaman <select aria-label="Jumlah data per halaman">${[10,25,50,75,100].map((size)=>`<option value="${size}"${referencePageSize[type]===size?' selected':''}>${size}</option>`).join('')}</select></label><button type="button" data-page="prev" aria-label="Halaman sebelumnya">‹</button>${pageCandidates.map((page)=>`<button type="button" data-page="${page}" class="${referencePage[type]===page?'active':''}">${page}</button>`).join('')}<button type="button" data-page="next" aria-label="Halaman berikutnya">›</button>`; pagination.querySelector('select').addEventListener('change',(event)=>{referencePageSize[type]=Number(event.target.value)||10;referencePage[type]=1;renderReference(type);}); pagination.querySelectorAll('button').forEach((button)=>button.addEventListener('click',()=>{const target=button.dataset.page;if(target==='prev')referencePage[type]=Math.max(1,referencePage[type]-1);else if(target==='next')referencePage[type]=Math.min(pageCount,referencePage[type]+1);else referencePage[type]=Number(target);renderReference(type);}));
+    };
     const loadReference = async (type) => {
-      const config=referenceConfig[type], head=document.getElementById(`${type}Head`), body=document.getElementById(`${type}Body`), empty=document.getElementById(`${type}Empty`), status=document.getElementById(`${type}Status`);
-      status.textContent='Memuat data dari Supabase…'; empty.hidden=true; body.innerHTML=''; head.innerHTML='';
-      try { const response=await fetch(`/api/reference-data?type=${encodeURIComponent(type)}`,{cache:'no-store'}); const result=await response.json(); if(!response.ok) throw new Error(result.error||'Data tidak dapat dimuat');
-        referenceRows[type]=result.data||[];
-        const actionLabel=config.label;
-        head.innerHTML=`<tr>${config.columns.map(([,label])=>`<th>${escapeCell(label)}</th>`).join('')}<th>Aksi</th></tr>`;
-        body.innerHTML=(result.data||[]).map((row,index)=>`<tr data-reference-type="${escapeCell(type)}" data-reference-index="${index}">${config.columns.map(([key])=>`<td>${escapeCell(formatReferenceValue(key,row[key]))}</td>`).join('')}<td><span class="row-actions"><button type="button" class="row-action" data-action="edit" title="Edit ${actionLabel}" aria-label="Edit ${actionLabel}">✎</button><button type="button" class="row-action row-action-delete" data-action="delete" title="Hapus ${actionLabel}" aria-label="Hapus ${actionLabel}"><svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true" focusable="false"><path fill="currentColor" d="M9 3h6l1 2h4v2H4V5h4l1-2Zm-3 6h12l-1 12H7L6 9Zm3 2v8h2v-8H9Zm4 0v8h2v-8h-2Z"/></svg></button></span></td></tr>`).join('');
-        empty.hidden=(result.data||[]).length>0; status.textContent=`${result.count||0} data tersedia.`;
-      } catch(error) { status.textContent=error.message; }
+      const status=document.getElementById(`${type}Status`); status.textContent='Memuat data dari Supabase…';
+      try { const response=await fetch(`/api/reference-data?type=${encodeURIComponent(type)}`,{cache:'no-store'}); const result=await response.json(); if(!response.ok) throw new Error(result.error||'Data tidak dapat dimuat'); referenceRows[type]=result.data||[]; referencePage[type]=1; renderReference(type); } catch(error) { status.textContent=error.message; }
     };
     const showReference = (type) => { hideAllPages(); const panel=document.getElementById(type); panel.hidden=false; history.replaceState(null, '', `#${type}`); loadReference(type); };
     const openReferenceEditor = (type, row = {}) => {
@@ -800,6 +813,9 @@
     document.querySelectorAll('[data-reference-back]').forEach(button=>button.addEventListener('click',showDashboard));
     document.querySelectorAll('[data-reference-add]').forEach(button=>button.addEventListener('click',()=>openReferenceEditor(button.dataset.referenceAdd)));
     document.querySelectorAll('.reference-panel').forEach(panel=>panel.addEventListener('click',(event)=>{ const button=event.target.closest('.row-action'); if(!button) return; const type=panel.id; const row=referenceRows[type][Number(button.closest('tr')?.dataset.referenceIndex)]; if(!row) return; if(button.dataset.action==='edit') openReferenceEditor(type,row); else openReferenceDelete(type,row); }));
+    document.querySelectorAll('.reference-search').forEach(input=>input.addEventListener('input',()=>{ const type=input.id.replace('Search',''); referenceQuery[type]=input.value; referencePage[type]=1; renderReference(type); }));
+    document.querySelectorAll('[data-reference-select-all]').forEach(input=>input.addEventListener('change',()=>{ const type=input.dataset.referenceSelectAll; const query=normalizeSearchText(referenceQuery[type]); referenceRows[type].filter((row)=>!query||normalizeSearchText(Object.values(row).join(' ')).includes(query)).forEach((row)=>input.checked?referenceSelected[type].add(String(row.id)):referenceSelected[type].delete(String(row.id))); renderReference(type); }));
+    document.querySelectorAll('.reference-panel').forEach(panel=>panel.addEventListener('change',(event)=>{ const checkbox=event.target.closest('.reference-row-checkbox'); if(!checkbox) return; const type=panel.id; const row=referenceRows[type][Number(checkbox.closest('tr')?.dataset.referenceIndex)]; if(!row) return; const selected=referenceSelected[type]; if(checkbox.checked) selected.add(String(row.id)); else selected.delete(String(row.id)); renderReference(type); }));
     const customerCard = document.getElementById('customerCard');
     customerCard.addEventListener('click', (event) => { if (!event.target.closest('a')) showCustomers(); });
     customerCard.addEventListener('keydown', (event) => { if ((event.key === 'Enter' || event.key === ' ') && !event.target.closest('a')) { event.preventDefault(); showCustomers(); } });
