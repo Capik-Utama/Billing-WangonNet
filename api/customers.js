@@ -30,9 +30,9 @@ function csvEscape(value) {
   return /[",\n\r]/.test(text) ? `"${text.replaceAll('"', '""')}"` : text;
 }
 
-async function supabase(path) {
+async function supabase(path, options = {}) {
   if (!SUPABASE_URL || !SUPABASE_KEY) throw new Error('Konfigurasi Supabase belum lengkap');
-  const response = await fetch(`${SUPABASE_URL}/rest/v1/${path}`, { headers: { apikey: SUPABASE_KEY, Authorization: `Bearer ${SUPABASE_KEY}` } });
+  const response = await fetch(`${SUPABASE_URL}/rest/v1/${path}`, { ...options, headers: { apikey: SUPABASE_KEY, Authorization: `Bearer ${SUPABASE_KEY}`, 'Content-Type': 'application/json', ...(options.headers || {}) } });
   const text = await response.text();
   let body; try { body = JSON.parse(text); } catch { body = text; }
   if (!response.ok) throw new Error(body?.message || body?.hint || `Supabase HTTP ${response.status}`);
@@ -43,8 +43,30 @@ async function listCustomers() {
   return supabase('customers?select=id,source_no,name,customer_code,branch_code,area_code,package_name,sales_name,national_id,phone,email,whatsapp,address,rt,rw,village,district,city_regency,latitude,longitude,join_date,billing_day,status,active_period,customer_network(pppoe_username,pppoe_password,onu_serial,olt,pon,vlan,odp_code,odp_port,modem_type,mac_address,ip_address,onu_attenuation,odp_attenuation,rx_ont,rx_odp)&order=source_no.asc&limit=1000');
 }
 
+const customerFields = ['source_no','name','customer_code','branch_code','area_code','package_name','sales_name','national_id','phone','email','whatsapp','address','rt','rw','village','district','city_regency','latitude','longitude','join_date','billing_day','status','active_period'];
+const networkFields = ['pppoe_username','pppoe_password','onu_serial','olt','pon','vlan','odp_code','odp_port','modem_type','mac_address','ip_address','onu_attenuation','odp_attenuation','rx_ont','rx_odp'];
+const pickFields = (value, fields) => Object.fromEntries(fields.filter((field) => Object.prototype.hasOwnProperty.call(value || {}, field)).map((field) => [field, value[field] === '' ? null : value[field]]));
+
+async function updateCustomer(payload) {
+  const customer = payload.customer || {};
+  const network = payload.network || {};
+  if (!customer.id) throw new Error('ID pelanggan tidak ditemukan');
+  if (!String(customer.name || '').trim()) throw new Error('Nama pelanggan wajib diisi');
+  const customerData = pickFields(customer, customerFields);
+  customerData.name = String(customerData.name).trim();
+  await supabase(`customers?id=eq.${encodeURIComponent(customer.id)}`, { method: 'PATCH', headers: { Prefer: 'return=minimal' }, body: JSON.stringify(customerData) });
+  if (Object.keys(network).length) await supabase('customer_network?on_conflict=customer_id', { method: 'POST', headers: { Prefer: 'resolution=merge-duplicates,return=minimal' }, body: JSON.stringify([{ customer_id: customer.id, ...pickFields(network, networkFields) }]) });
+  return { ok: true, message: 'Perubahan pelanggan berhasil disimpan.' };
+}
+
 module.exports = async function handler(req, res) {
   if (!getSession(req)) return json(res, 401, { error: 'Belum login' });
+  if (req.method === 'PATCH') {
+    try {
+      const payload = typeof req.body === 'string' ? JSON.parse(req.body) : req.body || {};
+      return json(res, 200, await updateCustomer(payload));
+    } catch (error) { return json(res, 400, { error: error.message }); }
+  }
   if (req.method !== 'GET') return json(res, 405, { error: 'Method tidak diizinkan' });
   try {
     const customers = await listCustomers();
