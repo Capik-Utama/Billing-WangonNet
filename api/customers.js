@@ -1,6 +1,7 @@
 const crypto = require('crypto');
 const SUPABASE_URL = process.env.SUPABASE_URL;
 const SUPABASE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_SECRET_KEY || process.env.SUPABASE_PUBLISHABLE_KEY;
+const SUPABASE_AUTH_KEY = process.env.SUPABASE_PUBLISHABLE_KEY || SUPABASE_KEY;
 
 function json(res, status, body) {
   res.statusCode = status;
@@ -37,6 +38,16 @@ async function supabase(path, options = {}) {
   let body; try { body = JSON.parse(text); } catch { body = text; }
   if (!response.ok) throw new Error(body?.message || body?.hint || `Supabase HTTP ${response.status}`);
   return body;
+}
+
+async function verifyPassword(session, password) {
+  if (!password || !session?.username || !SUPABASE_URL || !SUPABASE_AUTH_KEY) return false;
+  const response = await fetch(new URL('/rest/v1/rpc/verify_app_user', SUPABASE_URL), {
+    method: 'POST',
+    body: JSON.stringify({ p_username: String(session.username), p_password: String(password) }),
+    headers: { apikey: SUPABASE_AUTH_KEY, Authorization: `Bearer ${SUPABASE_AUTH_KEY}`, 'Content-Type': 'application/json' },
+  });
+  return response.ok && Boolean(await response.json());
 }
 
 async function listCustomers() {
@@ -79,7 +90,8 @@ async function createCustomer(payload) {
 }
 
 module.exports = async function handler(req, res) {
-  if (!getSession(req)) return json(res, 401, { error: 'Belum login' });
+  const session = getSession(req);
+  if (!session) return json(res, 401, { error: 'Belum login' });
   if (req.method === 'POST') {
     try {
       const payload = typeof req.body === 'string' ? JSON.parse(req.body) : req.body || {};
@@ -90,6 +102,16 @@ module.exports = async function handler(req, res) {
     try {
       const payload = typeof req.body === 'string' ? JSON.parse(req.body) : req.body || {};
       return json(res, 200, await updateCustomer(payload));
+    } catch (error) { return json(res, 400, { error: error.message }); }
+  }
+  if (req.method === 'DELETE') {
+    try {
+      const payload = typeof req.body === 'string' ? JSON.parse(req.body) : req.body || {};
+      if (!payload.id) return json(res, 400, { error: 'ID pelanggan tidak ditemukan' });
+      if (!payload.password) return json(res, 401, { error: 'Password login wajib diisi untuk menghapus pelanggan.' });
+      if (!(await verifyPassword(session, payload.password))) return json(res, 403, { error: 'Password login salah.' });
+      await supabase(`customers?id=eq.${encodeURIComponent(payload.id)}`, { method: 'DELETE', headers: { Prefer: 'return=minimal' } });
+      return json(res, 200, { ok: true, message: 'Pelanggan berhasil dihapus.' });
     } catch (error) { return json(res, 400, { error: error.message }); }
   }
   if (req.method !== 'GET') return json(res, 405, { error: 'Method tidak diizinkan' });

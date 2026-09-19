@@ -503,6 +503,14 @@
             <div class="customer-detail-actions"><button type="button" id="cancelCustomerDetail">Batal</button><button type="button" class="primary" id="saveCustomerDetail">Simpan &amp; Tutup</button></div>
           </form>
         </dialog>
+        <dialog class="customer-detail-dialog" id="customerDeleteDialog" aria-labelledby="customerDeleteTitle">
+          <form method="dialog" class="customer-detail-form">
+            <h3 id="customerDeleteTitle">Hapus Pelanggan</h3>
+            <p class="customer-detail-subtitle" id="customerDeleteSubtitle">Masukkan password login Anda untuk melanjutkan.</p>
+            <label class="reference-password-label">Password login<input type="password" id="customerDeletePassword" autocomplete="current-password" required></label>
+            <div class="customer-detail-actions"><button type="button" id="cancelCustomerDelete">Batal</button><button type="button" class="danger" id="confirmCustomerDelete">Hapus</button></div>
+          </form>
+        </dialog>
         <div class="customer-search"><div class="customer-selection-summary"><label class="select-all-control"><input type="checkbox" id="selectAllCustomers" aria-label="Pilih semua pelanggan di halaman ini"><span id="selectedCustomerCount">0 dipilih</span></label></div><input id="customerSearch" type="search" placeholder="Cari pelanggan, ID, no HP, alamat, paket, ODP…" autocomplete="off" /></div>
         <dialog class="import-preview-dialog" id="importPreviewDialog" aria-labelledby="importPreviewTitle">
           <form method="dialog" class="import-preview-form">
@@ -701,6 +709,23 @@
       ['NO', customer.source_no, 'customer', 'source_no'], ['Nama', customer.name, 'customer', 'name'], ['Kode Pelanggan', customer.customer_code, 'customer', 'customer_code'], ['Cabang', customer.branch_code, 'customer', 'branch_code'], ['Area', customer.area_code, 'customer', 'area_code'], ['Paket Internet', customer.package_name, 'customer', 'package_name'], ['Harga', customer.billing?.amount ?? customer.package?.price, null, null, true], ['Sales', customer.sales_name, 'customer', 'sales_name'], ['No KTP', customer.national_id, 'customer', 'national_id'], ['No HP', customer.phone, 'customer', 'phone'], ['Email', customer.email, 'customer', 'email'], ['WhatsApp', customer.whatsapp, 'customer', 'whatsapp'], ['Alamat', customer.address, 'customer', 'address'], ['RT', customer.rt, 'customer', 'rt'], ['RW', customer.rw, 'customer', 'rw'], ['Desa/Kelurahan', customer.village, 'customer', 'village'], ['Kecamatan', customer.district, 'customer', 'district'], ['Kabupaten/Kota', customer.city_regency, 'customer', 'city_regency'], ['Latitude', customer.latitude, 'customer', 'latitude'], ['Longitude', customer.longitude, 'customer', 'longitude'], ['PPPoE Username', network.pppoe_username, 'network', 'pppoe_username'], ['PPPoE Password', network.pppoe_password, 'network', 'pppoe_password'], ['ONU Serial', network.onu_serial, 'network', 'onu_serial'], ['OLT', network.olt, 'network', 'olt'], ['PON', network.pon, 'network', 'pon'], ['VLAN', network.vlan, 'network', 'vlan'], ['Formula ODP', customer.source_formulas?.odp_code, null, null, true], ['ODP', network.odp_code, 'network', 'odp_code'], ['Port ODP', network.odp_port, 'network', 'odp_port'], ['Tipe Modem', network.modem_type, 'network', 'modem_type'], ['MAC Address', network.mac_address, 'network', 'mac_address'], ['IP Address', network.ip_address, 'network', 'ip_address'], ['Redaman ONU', network.onu_attenuation, 'network', 'onu_attenuation'], ['Redaman ODP', network.odp_attenuation, 'network', 'odp_attenuation'], ['RX ONT', network.rx_ont, 'network', 'rx_ont'], ['RX ODP', network.rx_odp, 'network', 'rx_odp'], ['Speedtest Download', '', null, null, true], ['Speedtest Upload', '', null, null, true], ['Ping (ms)', '', null, null, true], ['Jitter (ms)', '', null, null, true], ['Catatan Test', '', null, null, true], ['Tanggal Bergabung', customer.join_date, 'customer', 'join_date'], ['Hari Tagihan', customer.billing_day, 'customer', 'billing_day'], ['Status', customer.status, 'customer', 'status'], ['Masa Aktif', customer.active_period, 'customer', 'active_period']
     ];
     let activeEditCustomer = null;
+    const customerDeleteDialog = document.getElementById('customerDeleteDialog');
+    const customerDeletePassword = document.getElementById('customerDeletePassword');
+    let activeCustomerDelete = [];
+    const openCustomerDelete = (selected) => {
+      activeCustomerDelete = selected.filter(Boolean);
+      if (!activeCustomerDelete.length) return;
+      document.getElementById('customerDeleteSubtitle').textContent = `${activeCustomerDelete.length} pelanggan akan dihapus. Masukkan password login Anda untuk melanjutkan.`;
+      customerDeletePassword.value = ''; customerDeleteDialog.showModal();
+      setTimeout(() => customerDeletePassword.focus(), 0);
+    };
+    const updateCustomerStatus = async (selected, status) => {
+      const label = status === 'Aktif' ? 'diaktifkan' : 'dinonaktifkan';
+      try {
+        await Promise.all(selected.map((customer) => fetch('/api/customers', { method: 'PATCH', headers: {'Content-Type':'application/json'}, body: JSON.stringify({ customer: { id: customer.id, name: customer.name, status }, network: {} }) }).then(async (response) => { const result = await response.json(); if (!response.ok) throw new Error(result.error || 'Status pelanggan gagal diperbarui'); return result; })));
+        window.billingState=null; await loadBillingSummary(); await loadCustomers(); setCustomerStatus(`${selected.length} pelanggan berhasil ${label}.`);
+      } catch (error) { setCustomerStatus(error.message, true); }
+    };
     const showCustomerCreate = () => {
       activeEditCustomer={create:true,customer:{},network:{}};
       customerDetailSubtitle.textContent='Isi data pelanggan baru. Nama wajib diisi; nomor dan kode pelanggan dibuat otomatis bila kosong.';
@@ -720,6 +745,21 @@
       } catch(error) { setCustomerStatus(error.message,true); } finally { hideDataLoading(); }
     };
     addCustomerButton.addEventListener('click', showCustomerCreate);
+    document.getElementById('cancelCustomerDelete').addEventListener('click', () => { activeCustomerDelete=[]; customerDeleteDialog.close(); });
+    document.getElementById('confirmCustomerDelete').addEventListener('click', async () => {
+      if (!activeCustomerDelete.length) return;
+      const password=customerDeletePassword.value;
+      if (!password) { document.getElementById('customerDeleteSubtitle').textContent='Password login wajib diisi.'; return; }
+      const button=document.getElementById('confirmCustomerDelete'); button.disabled=true;
+      try {
+        for (const customer of activeCustomerDelete) {
+          const response=await fetch('/api/customers',{method:'DELETE',headers:{'Content-Type':'application/json'},body:JSON.stringify({id:customer.id,password})});
+          const result=await response.json(); if(!response.ok) throw new Error(result.error||'Pelanggan gagal dihapus');
+        }
+        customerDeleteDialog.close(); activeCustomerDelete=[]; selectedCustomerCodes.clear(); window.billingState=null; await loadBillingSummary(); await loadCustomers(); setCustomerStatus('Pelanggan berhasil dihapus.');
+      } catch(error) { document.getElementById('customerDeleteSubtitle').textContent=error.message; setCustomerStatus(error.message,true); }
+      finally { button.disabled=false; }
+    });
     cancelCustomerDetail.addEventListener('click', () => { activeEditCustomer=null; customerDetailDialog.close(); });
     saveCustomerDetail.addEventListener('click', async () => {
       if (!activeEditCustomer) return;
@@ -727,7 +767,7 @@
       customerDetailGrid.querySelectorAll('input[data-field]').forEach((input) => { if (!input.dataset.field || input.readOnly) return; if (input.dataset.group==='customer') customer[input.dataset.field]=input.value; if (input.dataset.group==='network') network[input.dataset.field]=input.value; });
       if (!String(customer.name||'').trim()) { setCustomerStatus('Nama pelanggan wajib diisi.',true); return; }
       saveCustomerDetail.disabled=true; customerDetailDialog.close(); showDataLoading(isCreate?'Menyimpan data baru…':'Menyimpan perubahan…',isCreate?'Menambahkan pelanggan ke Supabase.':'Memperbarui data pelanggan di Supabase.');
-      try { const response=await fetch('/api/customers',{method:isCreate?'POST':'PATCH',headers:{'Content-Type':'application/json'},body:JSON.stringify({customer,network})}); const result=await response.json(); if(!response.ok) throw new Error(result.error||'Data pelanggan gagal disimpan'); activeEditCustomer=null; window.billingState=null; await loadBillingSummary(); await loadCustomers(); setCustomerStatus(result.message||'Data pelanggan berhasil disimpan.'); } catch(error) { setCustomerStatus(error.message,true); } finally { hideDataLoading(); saveCustomerDetail.disabled=false; }
+      try { const response=await fetch('/api/customers',isCreate?{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({customer,network})}:{method:'PATCH',headers:{'Content-Type':'application/json'},body:JSON.stringify({customer,network})}); const result=await response.json(); if(!response.ok) throw new Error(result.error||'Data pelanggan gagal disimpan'); activeEditCustomer=null; window.billingState=null; await loadBillingSummary(); await loadCustomers(); setCustomerStatus(result.message||'Data pelanggan berhasil disimpan.'); } catch(error) { setCustomerStatus(error.message,true); } finally { hideDataLoading(); saveCustomerDetail.disabled=false; }
     });
     const normalizeSearchText = (value) => String(value ?? '').toLocaleLowerCase('id-ID').normalize('NFD').replace(/[\u0300-\u036f]/g,'');
     const searchScore = (customer, query) => {
@@ -761,7 +801,13 @@
     customerSearch.addEventListener('input', (event) => { customerQuery=event.target.value; customerPage=1; renderCustomers(); });
     selectAllCustomers.addEventListener('change',()=>{ const query=customerQuery.trim(); customers.filter((customer)=>searchScore(customer,query)>=0).forEach((customer)=>{ const code=String(customer.customer_code||''); selectAllCustomers.checked?selectedCustomerCodes.add(code):selectedCustomerCodes.delete(code); }); renderCustomers(); });
     customerBody.addEventListener('change',(event)=>{ const checkbox=event.target.closest('.customer-row-checkbox'); if(!checkbox) return; const code=checkbox.dataset.customerSelect; if(checkbox.checked) selectedCustomerCodes.add(code); else selectedCustomerCodes.delete(code); renderCustomers(); });
-    customerBulkActions.querySelectorAll('[data-bulk-action]').forEach((button)=>button.addEventListener('click',()=>{ const labels={edit:'Edit',payment:'Pembayaran',activate:'Aktifkan',deactivate:'Nonaktifkan',delete:'Hapus'}; setCustomerStatus(`${labels[button.dataset.bulkAction]||'Aksi'}: aksi siap diproses untuk ${selectedCustomerCodes.size.toLocaleString('id-ID')} pelanggan terpilih.`); }));
+    customerBulkActions.querySelectorAll('[data-bulk-action]').forEach((button)=>button.addEventListener('click',()=>{
+      const selected=customers.filter((customer)=>selectedCustomerCodes.has(String(customer.customer_code||''))); const action=button.dataset.bulkAction;
+      if(!selected.length) return;
+      if(action==='edit'||action==='payment'){ if(selected.length!==1) return setCustomerStatus(`Pilih tepat satu pelanggan untuk ${action==='edit'?'edit':'melihat pembayaran'}.`,true); showCustomerDetail(selected[0]); return; }
+      if(action==='delete') return openCustomerDelete(selected);
+      if(action==='activate'||action==='deactivate') return updateCustomerStatus(selected,action==='activate'?'Aktif':'Nonaktif');
+    }));
     const loadCustomers = async () => { try { const billing=window.billingState || await (await fetch('/api/billing',{cache:'no-store'})).json(); const fullResponse=await fetch('/api/customers',{cache:'no-store'}); const fullResult=fullResponse.ok?await fullResponse.json():{customers:[]}; const fullByCode=new Map((fullResult.customers||[]).map((customer)=>[customer.customer_code,customer])); customerHeaders=['NO','ID Pelanggan','Nama','Alamat','No HP','Paket Internet','Harga','Hari Tagihan','Pembayaran','Status']; customers=(billing.customers||[]).map((customer)=>({...fullByCode.get(customer.customer_code),...customer,sheet_row:[customer.source_no,customerIdFromPppoe(customer.pppoe_username),customer.name,customer.address,customer.phone,customer.package_name,customer.package?.price,customer.billing_day,customer.billing.payment_status,customer.status], billing:customer.billing})); renderCustomers(); } catch(e) { setCustomerStatus(e.message,true); } };
     const dashboardPage = document.getElementById('dashboard');
     const referenceConfig = {
@@ -811,12 +857,12 @@
       const config=referenceConfig[type]; activeReferenceEdit={type,id:row.id||null}; referenceDetailTitle.textContent=`${row.id?'Edit':'Tambah'} Data ${config.label}`; referenceDetailSubtitle.textContent=row.id?'Perbarui data lalu tekan Simpan.':'Isi data baru untuk disimpan ke Supabase.';
       referenceDetailGrid.innerHTML=config.fields.map(([key,label,inputType])=>`<div class="customer-detail-item"><label><span>${escapeCell(label)}</span><input type="${inputType}" data-reference-field="${key}" value="${escapeCell(row[key]??'')}"${inputType==='number'?' step="any"':''}></label></div>`).join(''); referenceDetailDialog.showModal();
     };
-    const openReferenceDelete = (type, row) => { activeReferenceDelete={type,id:row.id}; referenceDeleteDialog.querySelector('#referenceDeleteTitle').textContent=`Hapus Data ${referenceConfig[type].label}`; referenceDeleteDialog.querySelector('#referenceDeleteSubtitle').textContent=`Data ${row[referenceConfig[type].columns[0][0]]||''} akan dihapus. Masukkan password login Anda untuk melanjutkan.`; referenceDeletePassword.value=''; referenceDeleteDialog.showModal(); setTimeout(()=>referenceDeletePassword.focus(),0); };
+    const openReferenceDelete = (type, row) => { const ids=Array.isArray(row)?row.map((item)=>item.id):[row.id]; activeReferenceDelete={type,ids}; referenceDeleteDialog.querySelector('#referenceDeleteTitle').textContent=`Hapus Data ${referenceConfig[type].label}`; referenceDeleteDialog.querySelector('#referenceDeleteSubtitle').textContent=`${ids.length} data ${referenceConfig[type].label} akan dihapus. Masukkan password login Anda untuk melanjutkan.`; referenceDeletePassword.value=''; referenceDeleteDialog.showModal(); setTimeout(()=>referenceDeletePassword.focus(),0); };
     const setReferenceStatus = (type,message,isError=false) => { const status=document.getElementById(`${type}Status`); status.textContent=message; status.style.color=isError?'#b42318':''; };
     document.getElementById('cancelReferenceDetail').addEventListener('click',()=>{activeReferenceEdit=null; referenceDetailDialog.close();});
     document.getElementById('cancelReferenceDelete').addEventListener('click',()=>{activeReferenceDelete=null; referenceDeleteDialog.close();});
     document.getElementById('saveReferenceDetail').addEventListener('click',async()=>{ if(!activeReferenceEdit) return; const {type,id}=activeReferenceEdit; const data=Object.fromEntries([...referenceDetailGrid.querySelectorAll('[data-reference-field]')].map(input=>[input.dataset.referenceField,input.value])); const button=document.getElementById('saveReferenceDetail'); button.disabled=true; try { const response=await fetch(`/api/reference-data?type=${encodeURIComponent(type)}`,{method:id?'PATCH':'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({id,data})}); const result=await response.json(); if(!response.ok) throw new Error(result.error||'Data gagal disimpan'); referenceDetailDialog.close(); activeReferenceEdit=null; await loadReference(type); setReferenceStatus(type,result.message); } catch(error) { referenceDetailSubtitle.textContent=error.message; setReferenceStatus(type,error.message,true); } finally { button.disabled=false; } });
-    document.getElementById('confirmReferenceDelete').addEventListener('click',async()=>{ if(!activeReferenceDelete) return; const {type,id}=activeReferenceDelete; const password=referenceDeletePassword.value; if(!password) { referenceDeleteDialog.querySelector('#referenceDeleteSubtitle').textContent='Password login wajib diisi.'; return; } const button=document.getElementById('confirmReferenceDelete'); button.disabled=true; try { const response=await fetch(`/api/reference-data?type=${encodeURIComponent(type)}`,{method:'DELETE',headers:{'Content-Type':'application/json'},body:JSON.stringify({id,password})}); const result=await response.json(); if(!response.ok) throw new Error(result.error||'Data gagal dihapus'); referenceDeleteDialog.close(); activeReferenceDelete=null; await loadReference(type); setReferenceStatus(type,result.message); } catch(error) { referenceDeleteDialog.querySelector('#referenceDeleteSubtitle').textContent=error.message; setReferenceStatus(type,error.message,true); } finally { button.disabled=false; } });
+    document.getElementById('confirmReferenceDelete').addEventListener('click',async()=>{ if(!activeReferenceDelete) return; const {type,ids}=activeReferenceDelete; const password=referenceDeletePassword.value; if(!password) { referenceDeleteDialog.querySelector('#referenceDeleteSubtitle').textContent='Password login wajib diisi.'; return; } const button=document.getElementById('confirmReferenceDelete'); button.disabled=true; try { const response=await fetch(`/api/reference-data?type=${encodeURIComponent(type)}`,{method:'DELETE',headers:{'Content-Type':'application/json'},body:JSON.stringify({ids,password})}); const result=await response.json(); if(!response.ok) throw new Error(result.error||'Data gagal dihapus'); referenceDeleteDialog.close(); activeReferenceDelete=null; await loadReference(type); setReferenceStatus(type,result.message); } catch(error) { referenceDeleteDialog.querySelector('#referenceDeleteSubtitle').textContent=error.message; setReferenceStatus(type,error.message,true); } finally { button.disabled=false; } });
     document.querySelectorAll('a[href="#pelanggan"]').forEach(a=>a.addEventListener('click',e=>{e.preventDefault();showCustomers();}));
     document.querySelectorAll('a[href="#dashboard"]').forEach(a=>a.addEventListener('click',e=>{e.preventDefault();showDashboard();}));
     ['odp','area','paket'].forEach(type=>document.querySelectorAll(`a[href="#${type}"]`).forEach(a=>a.addEventListener('click',e=>{e.preventDefault();showReference(type);})));
@@ -827,12 +873,19 @@
     document.querySelectorAll('.reference-search').forEach(input=>input.addEventListener('input',()=>{ const type=input.id.replace('Search',''); referenceQuery[type]=input.value; referencePage[type]=1; renderReference(type); }));
     document.querySelectorAll('[data-reference-select-all]').forEach(input=>input.addEventListener('change',()=>{ const type=input.dataset.referenceSelectAll; const query=normalizeSearchText(referenceQuery[type]); referenceRows[type].filter((row)=>!query||normalizeSearchText(Object.values(row).join(' ')).includes(query)).forEach((row)=>input.checked?referenceSelected[type].add(String(row.id)):referenceSelected[type].delete(String(row.id))); renderReference(type); }));
     document.querySelectorAll('.reference-panel').forEach(panel=>panel.addEventListener('change',(event)=>{ const checkbox=event.target.closest('.reference-row-checkbox'); if(!checkbox) return; const type=panel.id; const row=referenceRows[type][Number(checkbox.closest('tr')?.dataset.referenceIndex)]; if(!row) return; const selected=referenceSelected[type]; if(checkbox.checked) selected.add(String(row.id)); else selected.delete(String(row.id)); renderReference(type); }));
-    referenceBulkActions.querySelectorAll('[data-reference-bulk-action]').forEach((button)=>button.addEventListener('click',()=>{ const type=activeReferenceBulkType; if(!type) return; const label=referenceConfig[type].label; setReferenceStatus(type,`${button.dataset.referenceBulkAction==='edit'?'Edit':'Hapus'}: aksi siap diproses untuk ${referenceSelected[type].size.toLocaleString('id-ID')} data ${label} terpilih.`); }));
+    referenceBulkActions.querySelectorAll('[data-reference-bulk-action]').forEach((button)=>button.addEventListener('click',()=>{ const type=activeReferenceBulkType; if(!type) return; const selected=referenceRows[type].filter((row)=>referenceSelected[type].has(String(row.id))); if(button.dataset.referenceBulkAction==='edit'){ if(selected.length!==1) return setReferenceStatus(type,'Pilih tepat satu data untuk diedit.',true); return openReferenceEditor(type,selected[0]); } openReferenceDelete(type,selected); }));
     const customerCard = document.getElementById('customerCard');
     customerCard.addEventListener('click', (event) => { if (!event.target.closest('a')) showCustomers(); });
     customerCard.addEventListener('keydown', (event) => { if ((event.key === 'Enter' || event.key === ' ') && !event.target.closest('a')) { event.preventDefault(); showCustomers(); } });
     document.getElementById('backDashboard').addEventListener('click', showDashboard);
-    customerBody.addEventListener('click', (event) => { const button=event.target.closest('.row-action'); if (!button) return; const code=button.closest('tr')?.dataset.customerCode; const selected=customers.find((customer)=>customer.customer_code===code); if (button.dataset.action==='edit' && selected) return showCustomerDetail(selected); const labels={payment:'Pembayaran',activate:'Aktifkan pelanggan',deactivate:'Nonaktifkan pelanggan',delete:'Hapus pelanggan'}; setCustomerStatus(`${labels[button.dataset.action]||'Aksi'}: aksi siap diproses untuk pelanggan ini.`); });
+    customerBody.addEventListener('click', (event) => {
+      const button=event.target.closest('.row-action'); if(!button) return;
+      const code=button.closest('tr')?.dataset.customerCode; const selected=customers.find((customer)=>customer.customer_code===code); if(!selected) return;
+      const action=button.dataset.action;
+      if(action==='edit'||action==='payment'){ showCustomerDetail(selected); if(action==='payment') setCustomerStatus(`Popup detail pembayaran ${selected.name||'pelanggan'} dibuka.`); return; }
+      if(action==='delete') return openCustomerDelete([selected]);
+      if(action==='activate'||action==='deactivate') return updateCustomerStatus([selected],action==='activate'?'Aktif':'Nonaktif');
+    });
     loadCustomers();
     if (location.hash === '#pelanggan') showCustomers(); else if (['odp','area','paket'].includes(location.hash.slice(1))) showReference(location.hash.slice(1));
   </script>

@@ -24,7 +24,7 @@ assert.match(html, /id="saveCustomerDetail"/);
 assert.match(html, /Simpan &amp; Tutup/);
 assert.match(html, /id="cancelCustomerDetail"/);
 assert.match(html, /method:'PATCH'/);
-assert.match(html, /<tr><th>Aksi<\/th>/);
+assert.match(html, /<th>Aksi<\/th>/);
 assert.match(html, /data-action="edit" title="Lihat detail pelanggan"/);
 assert.match(html, /id="customerSearch" type="search"/);
 assert.match(html, /const searchScore/);

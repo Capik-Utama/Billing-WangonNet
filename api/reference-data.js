@@ -62,11 +62,12 @@ module.exports = async function handler(req, res) {
       return json(res, 200, { ok: true, message: 'Perubahan data berhasil disimpan.' });
     }
     if (req.method === 'DELETE') {
-      if (!id) return json(res, 400, { error: 'ID data tidak ditemukan' });
+      const ids = Array.isArray(payload.ids) ? payload.ids.map((value) => String(value).trim()).filter(Boolean) : (id ? [id] : []);
+      if (!ids.length) return json(res, 400, { error: 'ID data tidak ditemukan' });
       if (!payload.password) return json(res, 401, { error: 'Password login wajib diisi untuk menghapus data.' });
       if (!(await verifyPassword(session, payload.password))) return json(res, 403, { error: 'Password login salah.' });
-      await supabase(`${resource.table}?id=eq.${encodeURIComponent(id)}`, { method: 'DELETE', headers: { Prefer: 'return=minimal' } });
-      return json(res, 200, { ok: true, message: 'Data berhasil dihapus.' });
+      await supabase(`${resource.table}?id=in.(${ids.map((value) => encodeURIComponent(value)).join(',')})`, { method: 'DELETE', headers: { Prefer: 'return=minimal' } });
+      return json(res, 200, { ok: true, message: `${ids.length} data berhasil dihapus.` });
     }
     return json(res, 405, { error: 'Method tidak diizinkan' });
   } catch (error) { return json(res, 400, { error: error.message }); }
