@@ -187,6 +187,9 @@
     .customer-head { display:flex; align-items:flex-start; justify-content:space-between; gap:16px; margin-bottom:16px; }
     .customer-head h2 { margin:0; font-size:clamp(20px,3vw,28px); }
     .customer-head p { margin:6px 0 0; color:var(--muted); }
+    .customer-title-inline { min-width:0; margin-left:2px; }
+    .customer-title-inline h2 { white-space:nowrap; }
+    .customer-title-inline p { white-space:nowrap; }
     .customer-actions { display:flex; flex-wrap:wrap; gap:8px; justify-content:flex-end; }
     .customer-actions button, .file-label { border:2px solid transparent; border-radius:9px; padding:10px 12px; font:inherit; font-weight:800; cursor:pointer; background:var(--accent); color:var(--accent-ink); }
     .customer-actions button:hover, .customer-actions button:focus-visible, .file-label:hover, .file-label:focus-within { outline:3px solid #fff; outline-offset:2px; box-shadow:0 0 0 5px var(--accent); }
@@ -196,9 +199,11 @@
     .customer-actions button.danger { background:#b42318; color:#fff; }
     .customer-actions button.danger:hover, .customer-actions button.danger:focus-visible { background:#8f1c14; outline:3px solid rgba(180,35,24,.25); outline-offset:2px; }
     .file-label input { display:none; }
-    .customer-search { display:flex; align-items:center; gap:8px; margin:0 0 12px; }
-    .customer-search label { color:var(--muted); font-size:13px; font-weight:800; white-space:nowrap; }
-    .customer-search input { width:min(440px, 100%); border:1px solid var(--line); border-radius:9px; padding:10px 12px; color:var(--ink); background:#fff; font:inherit; }
+    .customer-search { display:flex; align-items:center; justify-content:space-between; gap:8px; margin:0 0 12px; }
+    .customer-selection-summary { color:var(--muted); font-size:13px; font-weight:800; }
+    .select-all-control { display:inline-flex; align-items:center; gap:7px; cursor:pointer; white-space:nowrap; }
+    .select-all-control input, .customer-row-checkbox { width:16px; height:16px; margin:0; accent-color:var(--accent); cursor:pointer; }
+    .customer-search input { width:min(280px, 48%); border:1px solid var(--line); border-radius:9px; padding:8px 10px; color:var(--ink); background:#fff; font:inherit; }
     .customer-search input:focus { outline:3px solid rgba(8,125,240,.18); border-color:var(--accent); }
     .customer-status { min-height:22px; color:var(--muted); font-size:13px; font-weight:700; margin:10px 0; }
     .import-preview-dialog { width:min(720px, calc(100vw - 28px)); max-height:85vh; border:0; border-radius:16px; padding:0; color:var(--ink); box-shadow:0 18px 60px rgba(0,0,0,.3); }
@@ -257,6 +262,11 @@
     .sort-header { border:0; background:transparent; color:inherit; font:inherit; font-weight:800; cursor:pointer; padding:0; text-align:left; white-space:nowrap; }
     .sort-header:hover, .sort-header:focus-visible { color:var(--accent); outline:2px solid var(--accent); outline-offset:2px; }
     .customer-table tr:hover td { background:#f8fbff; }
+    .selection-cell { width:36px; max-width:36px; text-align:center !important; }
+    .customer-bulk-actions[hidden] { display:none; }
+    .customer-bulk-actions { position:fixed; left:50%; bottom:14px; z-index:40; display:flex; align-items:center; gap:8px; padding:8px 10px; border:1px solid var(--line); border-radius:12px; background:#fff; box-shadow:0 10px 30px rgba(22,34,55,.28); transform:translateX(-50%); }
+    .customer-bulk-actions strong { color:var(--ink); font-size:12px; white-space:nowrap; }
+    .customer-bulk-actions .row-action { flex:0 0 auto; }
     .empty-customers { padding:28px; text-align:center; color:var(--muted); }
     body.theme-gelap .login-card,
     body.theme-gelap .customer-panel,
@@ -284,9 +294,12 @@
     @media (max-width:760px) {
       .customer-head { display:block; }
       .customer-navigation { margin-bottom:14px; flex-wrap:wrap; }
+      .customer-title-inline { flex:1 1 100%; margin-top:2px; }
+      .customer-title-inline h2, .customer-title-inline p { white-space:normal; }
       .customer-actions { justify-content:flex-start; margin-top:14px; }
       .customer-actions button, .file-label { flex:1 1 calc(50% - 8px); text-align:center; font-size:12px; }
       .customer-table th:first-child, .customer-table td:first-child { width:124px; }
+      .customer-search input { width:min(240px, 55%); }
       .row-actions { gap:2px; }
       .row-action { width:20px; height:20px; border-width:1px; border-radius:4px; font-size:10px; }
       .row-action svg { width:10px; height:10px; }
@@ -456,8 +469,8 @@
           <div class="customer-navigation">
             <button type="button" class="back-dashboard" id="backDashboard">← Beranda</button>
             <button type="button" class="primary" id="addCustomerButton">TAMBAH DATA</button>
+            <div class="customer-title-inline"><h2 id="customerTitle">Data Pelanggan</h2><p id="customerSubtitle">Memuat data pelanggan dari billing…</p></div>
           </div>
-          <div><h2 id="customerTitle">Data Pelanggan</h2><p id="customerSubtitle">Memuat data pelanggan dari billing…</p></div>
           <div class="customer-actions" aria-label="Aksi data pelanggan">
             <label class="file-label import-button" id="importCustomerLabel" hidden>Import<input type="file" id="importCustomerFile" accept=".xlsx,.xls" /></label>
             <button type="button" class="export-button" id="exportCustomerButton" hidden>Export</button>
@@ -473,7 +486,7 @@
             <div class="customer-detail-actions"><button type="button" id="cancelCustomerDetail">Batal</button><button type="button" class="primary" id="saveCustomerDetail">Simpan &amp; Tutup</button></div>
           </form>
         </dialog>
-        <div class="customer-search"><label for="customerSearch">Cari pelanggan</label><input id="customerSearch" type="search" placeholder="Nama, ID pelanggan, no HP, alamat, paket, ODP…" autocomplete="off" /></div>
+        <div class="customer-search"><div class="customer-selection-summary"><label class="select-all-control"><input type="checkbox" id="selectAllCustomers" aria-label="Pilih semua pelanggan di halaman ini"><span id="selectedCustomerCount">0 dipilih</span></label></div><input id="customerSearch" type="search" placeholder="Cari pelanggan, ID, no HP, alamat, paket, ODP…" autocomplete="off" /></div>
         <dialog class="import-preview-dialog" id="importPreviewDialog" aria-labelledby="importPreviewTitle">
           <form method="dialog" class="import-preview-form">
             <h3 id="importPreviewTitle">Pratinjau Import</h3>
@@ -484,6 +497,14 @@
         </dialog>
         <div class="customer-table-wrap"><table class="customer-table"><thead id="customerHead"></thead><tbody id="customerBody"></tbody></table><div class="empty-customers" id="customerEmpty" hidden>Tidak ada data pelanggan.</div></div><div class="pagination" id="customerPagination"></div>
       </section>
+      <div class="customer-bulk-actions" id="customerBulkActions" hidden aria-label="Aksi pelanggan yang dipilih">
+        <strong id="bulkSelectionLabel">0 dipilih</strong>
+        <button type="button" class="row-action" data-bulk-action="edit" title="Edit pelanggan terpilih" aria-label="Edit pelanggan terpilih">✎</button>
+        <button type="button" class="row-action" data-bulk-action="payment" title="Pembayaran pelanggan terpilih" aria-label="Pembayaran pelanggan terpilih">▣</button>
+        <button type="button" class="row-action" data-bulk-action="activate" title="Aktifkan pelanggan terpilih" aria-label="Aktifkan pelanggan terpilih">✓</button>
+        <button type="button" class="row-action" data-bulk-action="deactivate" title="Nonaktifkan pelanggan terpilih" aria-label="Nonaktifkan pelanggan terpilih">⏻</button>
+        <button type="button" class="row-action row-action-delete" data-bulk-action="delete" title="Hapus pelanggan terpilih" aria-label="Hapus pelanggan terpilih"><svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true" focusable="false"><path fill="currentColor" d="M9 3h6l1 2h4v2H4V5h4l1-2Zm-3 6h12l-1 12H7L6 9Zm3 2v8h2v-8H9Zm4 0v8h2v-8h-2Z"/></svg></button>
+      </div>
 
       <dialog id="deleteAllDataDialog" aria-labelledby="deleteAllDataTitle">
         <form method="dialog" class="delete-dialog-form">
@@ -643,9 +664,14 @@
     const customerEmpty = document.getElementById('customerEmpty');
     const customerPagination = document.getElementById('customerPagination');
     const customerSearch = document.getElementById('customerSearch');
-    let customerHeaders = []; let customers = []; let customerQuery = ''; let sortIndex = null; let sortDirection = 1; let customerPage = 1; let customerPageSize = 10;
+    let customerHeaders = []; let customers = []; let customerQuery = ''; let sortIndex = null; let sortDirection = 1; let customerPage = 1; let customerPageSize = 10; let selectedCustomerCodes = new Set();
+    const selectAllCustomers = document.getElementById('selectAllCustomers');
+    const selectedCustomerCount = document.getElementById('selectedCustomerCount');
+    const customerBulkActions = document.getElementById('customerBulkActions');
+    const bulkSelectionLabel = document.getElementById('bulkSelectionLabel');
     const setCustomerStatus = (text, error=false) => { customerStatus.textContent=text; customerStatus.style.color=error?'#b42318':'var(--muted)'; };
     const escapeCell = (value) => String(value ?? '').replace(/[&<>"']/g, (char) => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[char]));
+    const updateCustomerSelectionUI = () => { const count=selectedCustomerCodes.size; selectedCustomerCount.textContent=`${count.toLocaleString('id-ID')} dipilih`; bulkSelectionLabel.textContent=`${count.toLocaleString('id-ID')} dipilih`; customerBulkActions.hidden=count===0; };
     const customerIdFromPppoe = (value) => String(value ?? '').split(/[@-]/, 1)[0];
     const customerRow = (customer) => Array.isArray(customer.sheet_row) ? customer.sheet_row : customerHeaders.map((_, i) => i===0?customer.source_no:i===1?customerIdFromPppoe(customer.pppoe_username):i===2?customer.name:i===3?customer.address:i===4?customer.phone:i===5?customer.package_name:i===6?customer.billing_day:i===7?customer.billing?.payment_status:i===8?customer.status:'');
     const formatCustomerCell = (header, value) => { if (header==='Pembayaran') return /^(paid|lunas|sudah lunas)$/i.test(String(value||'')) ? 'Sudah Lunas' : 'Belum Lunas'; if (header==='Status') return /^(active|aktif|on)$/i.test(String(value||'')) ? 'Aktif' : 'Off'; return value ?? ''; };
@@ -698,18 +724,22 @@
     const renderCustomers = () => {
       const query=customerQuery.trim(); const filtered=customers.map((customer,originalIndex)=>({customer,originalIndex,score:searchScore(customer,query)})).filter((item)=>item.score>=0);
       customerCount.textContent=filtered.length.toLocaleString('id-ID'); customerSubtitle.textContent=query?`${filtered.length.toLocaleString('id-ID')} hasil dari ${customers.length.toLocaleString('id-ID')} pelanggan`:`${customers.length.toLocaleString('id-ID')} pelanggan dari database`;
-      customerHead.innerHTML='<tr>'+customerHeaders.map((h,i)=>`<th><button type="button" class="sort-header" data-sort-index="${i}" title="Sortir berdasarkan ${escapeCell(h || `Kolom ${i+1}`)}">${escapeCell(h || `Kolom ${i+1}`)} <span aria-hidden="true">${sortIndex===i?(sortDirection===1?'▲':'▼'):'↕'}</span></button></th>`).join('')+'<th>Aksi</th></tr>';
+      customerHead.innerHTML='<tr><th class="selection-cell"><input type="checkbox" id="selectAllVisibleCustomers" aria-label="Pilih semua pelanggan di halaman ini"></th>'+customerHeaders.map((h,i)=>`<th><button type="button" class="sort-header" data-sort-index="${i}" title="Sortir berdasarkan ${escapeCell(h || `Kolom ${i+1}`)}">${escapeCell(h || `Kolom ${i+1}`)} <span aria-hidden="true">${sortIndex===i?(sortDirection===1?'▲':'▼'):'↕'}</span></button></th>`).join('')+'<th>Aksi</th></tr>';
       const ordered = filtered;
       if (query) ordered.sort((a,b) => b.score-a.score || a.originalIndex-b.originalIndex);
       else if (sortIndex !== null) ordered.sort((a,b) => { const av=String(customerRow(a.customer)[sortIndex]??'').toLowerCase(); const bv=String(customerRow(b.customer)[sortIndex]??'').toLowerCase(); return av.localeCompare(bv,'id',{numeric:true,sensitivity:'base'}) * sortDirection || a.originalIndex-b.originalIndex; });
       const pageCount=Math.max(1,Math.ceil(ordered.length/customerPageSize)); customerPage=Math.min(customerPage,pageCount); const visible=ordered.slice((customerPage-1)*customerPageSize,customerPage*customerPageSize);
-      customerBody.innerHTML=visible.map(({customer})=>{ const row=customerRow(customer); return `<tr data-customer-code="${escapeCell(customer.customer_code)}">${customerHeaders.map((header,i)=>{ const raw=row[i]??''; const value=formatCustomerCell(header,raw); return `<td title="${escapeCell(raw)}">${escapeCell(value)}</td>`; }).join('')}<td><span class="row-actions"><button type="button" class="row-action" data-action="edit" title="Lihat detail pelanggan" aria-label="Lihat detail pelanggan">✎</button><button type="button" class="row-action" data-action="payment" title="Pembayaran" aria-label="Pembayaran">▣</button><button type="button" class="row-action" data-action="activate" title="Aktifkan pelanggan" aria-label="Aktifkan pelanggan">✓</button><button type="button" class="row-action" data-action="deactivate" title="Nonaktifkan pelanggan" aria-label="Nonaktifkan pelanggan">⏻</button><button type="button" class="row-action row-action-delete" data-action="delete" title="Hapus pelanggan" aria-label="Hapus pelanggan"><svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true" focusable="false"><path fill="currentColor" d="M9 3h6l1 2h4v2H4V5h4l1-2Zm-3 6h12l-1 12H7L6 9Zm3 2v8h2v-8H9Zm4 0v8h2v-8h-2Z"/></svg></button></span></td></tr>`; }).join(''); customerEmpty.hidden=customers.length>0;
+      customerBody.innerHTML=visible.map(({customer})=>{ const row=customerRow(customer); const code=String(customer.customer_code||''); return `<tr data-customer-code="${escapeCell(code)}"><td class="selection-cell"><input type="checkbox" class="customer-row-checkbox" data-customer-select="${escapeCell(code)}" aria-label="Pilih ${escapeCell(customer.name||'pelanggan')}"${selectedCustomerCodes.has(code)?' checked':''}></td>${customerHeaders.map((header,i)=>{ const raw=row[i]??''; const value=formatCustomerCell(header,raw); return `<td title="${escapeCell(raw)}">${escapeCell(value)}</td>`; }).join('')}<td><span class="row-actions"><button type="button" class="row-action" data-action="edit" title="Lihat detail pelanggan" aria-label="Lihat detail pelanggan">✎</button><button type="button" class="row-action" data-action="payment" title="Pembayaran" aria-label="Pembayaran">▣</button><button type="button" class="row-action" data-action="activate" title="Aktifkan pelanggan" aria-label="Aktifkan pelanggan">✓</button><button type="button" class="row-action" data-action="deactivate" title="Nonaktifkan pelanggan" aria-label="Nonaktifkan pelanggan">⏻</button><button type="button" class="row-action row-action-delete" data-action="delete" title="Hapus pelanggan" aria-label="Hapus pelanggan"><svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true" focusable="false"><path fill="currentColor" d="M9 3h6l1 2h4v2H4V5h4l1-2Zm-3 6h12l-1 12H7L6 9Zm3 2v8h2v-8H9Zm4 0v8h2v-8h-2Z"/></svg></button></span></td></tr>`; }).join(''); customerEmpty.hidden=customers.length>0;
+      const visibleCodes=visible.map(({customer})=>String(customer.customer_code||'')); const selectAllVisible=document.getElementById('selectAllVisibleCustomers'); selectAllVisible.checked=visibleCodes.length>0&&visibleCodes.every((code)=>selectedCustomerCodes.has(code)); selectAllVisible.indeterminate=visibleCodes.some((code)=>selectedCustomerCodes.has(code))&&!selectAllVisible.checked; selectAllVisible.addEventListener('change',()=>{ visibleCodes.forEach((code)=>selectAllVisible.checked?selectedCustomerCodes.add(code):selectedCustomerCodes.delete(code)); renderCustomers(); }); updateCustomerSelectionUI();
       customerEmpty.hidden=filtered.length>0; customerEmpty.textContent=query?'Tidak ada pelanggan yang cocok dengan pencarian.':'Tidak ada data pelanggan.';
       const pageCandidates=[1,2,3,5,10,20,50,100,pageCount,customerPage].filter((page,index,array)=>page>=1&&page<=pageCount&&array.indexOf(page)===index).sort((a,b)=>a-b);
       customerPagination.innerHTML=`<label>Per halaman <select id="customerPageSize" aria-label="Jumlah data per halaman">${[10,25,50,100,250,500].map((size)=>`<option value="${size}"${customerPageSize===size?' selected':''}>${size}</option>`).join('')}</select></label><button type="button" data-page="prev" aria-label="Halaman sebelumnya">‹</button>${pageCandidates.map((page)=>`<button type="button" data-page="${page}" class="${customerPage===page?'active':''}">${page}</button>`).join('')}<button type="button" data-page="next" aria-label="Halaman berikutnya">›</button>`; customerPagination.querySelector('#customerPageSize').addEventListener('change',(e)=>{customerPageSize=Number(e.target.value)||10;customerPage=1;renderCustomers();}); customerPagination.querySelectorAll('button').forEach((button)=>button.addEventListener('click',()=>{const target=button.dataset.page; if(target==='prev') customerPage=Math.max(1,customerPage-1); else if(target==='next') customerPage=Math.min(pageCount,customerPage+1); else customerPage=Number(target); renderCustomers();}));
       customerHead.querySelectorAll('.sort-header').forEach((button) => button.addEventListener('click', () => { const index=Number(button.dataset.sortIndex); if(sortIndex===index) sortDirection*=-1; else { sortIndex=index; sortDirection=1; } customerPage=1; renderCustomers(); }));
     };
     customerSearch.addEventListener('input', (event) => { customerQuery=event.target.value; customerPage=1; renderCustomers(); });
+    selectAllCustomers.addEventListener('change',()=>{ const query=customerQuery.trim(); customers.filter((customer)=>searchScore(customer,query)>=0).forEach((customer)=>{ const code=String(customer.customer_code||''); selectAllCustomers.checked?selectedCustomerCodes.add(code):selectedCustomerCodes.delete(code); }); renderCustomers(); });
+    customerBody.addEventListener('change',(event)=>{ const checkbox=event.target.closest('.customer-row-checkbox'); if(!checkbox) return; const code=checkbox.dataset.customerSelect; if(checkbox.checked) selectedCustomerCodes.add(code); else selectedCustomerCodes.delete(code); renderCustomers(); });
+    customerBulkActions.querySelectorAll('[data-bulk-action]').forEach((button)=>button.addEventListener('click',()=>{ const labels={edit:'Edit',payment:'Pembayaran',activate:'Aktifkan',deactivate:'Nonaktifkan',delete:'Hapus'}; setCustomerStatus(`${labels[button.dataset.bulkAction]||'Aksi'}: aksi siap diproses untuk ${selectedCustomerCodes.size.toLocaleString('id-ID')} pelanggan terpilih.`); }));
     const loadCustomers = async () => { try { const billing=window.billingState || await (await fetch('/api/billing',{cache:'no-store'})).json(); const fullResponse=await fetch('/api/customers',{cache:'no-store'}); const fullResult=fullResponse.ok?await fullResponse.json():{customers:[]}; const fullByCode=new Map((fullResult.customers||[]).map((customer)=>[customer.customer_code,customer])); customerHeaders=['NO','ID Pelanggan','Nama','Alamat','No HP','Paket Internet','Hari Tagihan','Pembayaran','Status']; customers=(billing.customers||[]).map((customer)=>({...fullByCode.get(customer.customer_code),...customer,sheet_row:[customer.source_no,customerIdFromPppoe(customer.pppoe_username),customer.name,customer.address,customer.phone,customer.package_name,customer.billing_day,customer.billing.payment_status,customer.status], billing:customer.billing})); renderCustomers(); } catch(e) { setCustomerStatus(e.message,true); } };
     const dashboardPage = document.getElementById('dashboard');
     const referenceConfig = {
@@ -727,7 +757,7 @@
     let activeReferenceEdit = null;
     let activeReferenceDelete = null;
     const referencePanels = [...document.querySelectorAll('.reference-panel')];
-    const hideAllPages = () => { dashboardPage.hidden=true; customerPanel.hidden=true; referencePanels.forEach(panel=>{panel.hidden=true;}); };
+    const hideAllPages = () => { dashboardPage.hidden=true; customerPanel.hidden=true; customerBulkActions.hidden=true; referencePanels.forEach(panel=>{panel.hidden=true;}); };
     const showDashboard = () => { hideAllPages(); dashboardPage.hidden=false; history.replaceState(null, '', '#dashboard'); };
     const showCustomers = () => { hideAllPages(); customerPanel.hidden=false; history.replaceState(null, '', '#pelanggan'); loadCustomers(); };
     const formatReferenceValue = (key, value) => key === 'price' ? new Intl.NumberFormat('id-ID',{style:'currency',currency:'IDR',maximumFractionDigits:0}).format(Number(value||0)) : (value ?? '');
