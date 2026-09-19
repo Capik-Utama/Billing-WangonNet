@@ -32,4 +32,15 @@ Impor manual Google Sheets pada implementasi saat ini memakai endpoint ekspor CS
 
 Tab `Paket` mendukung proses manual dua arah melalui Billing tanpa Apps Script otomatis. Tombol `Import from Spreadsheet` membaca baris Paket, memfilter kode paket kosong/duplikat, lalu melakukan insert atau update ke tabel `internet_packages`. Tombol `Export ke Spreadsheet` memperbarui baris yang cocok dan menambahkan paket baru berdasarkan gabungan `Cabang` + `Kode Paket`; kolom yang terdeteksi berisi formula tidak pernah ditimpa.
 
-Untuk koneksi Google Sheets pada deployment, set `GOOGLE_SHEET_ID` dan token OAuth dengan scope Google Sheets pada `GOOGLE_SHEETS_ACCESS_TOKEN`. Token CLI lokal `GOOGLE_WORKSPACE_CLI_TOKEN` dipakai hanya untuk pengujian di sandbox dan tidak boleh disalin ke repository.
+Untuk koneksi Google Sheets pada deployment, set `GOOGLE_SHEET_ID` dan `GOOGLE_SERVICE_ACCOUNT_JSON` berisi isi JSON service account Google. Alternatifnya, simpan JSON tersebut sebagai Base64 pada `GOOGLE_SERVICE_ACCOUNT_JSON_B64`. Berikan alamat `client_email` service account sebagai **Editor** pada file Spreadsheet. Aplikasi membuat access token singkat secara server-side; private key tidak pernah dikirim ke browser. Token CLI lokal `GOOGLE_WORKSPACE_CLI_TOKEN` dipakai hanya untuk pengujian di sandbox dan tidak boleh disalin ke repository.
+
+Langkah setup service account:
+
+1. Buat service account pada Google Cloud project yang memiliki akses Google Sheets API.
+2. Aktifkan Google Sheets API pada project tersebut.
+3. Download JSON key service account secara aman.
+4. Salin nilai `client_email` dari JSON tersebut.
+5. Buka Spreadsheet dan bagikan kepada `client_email` itu dengan akses **Editor**.
+6. Simpan seluruh isi JSON sebagai environment variable rahasia `GOOGLE_SERVICE_ACCOUNT_JSON` pada deployment Billing.
+
+Jangan commit file JSON key ke repository dan jangan menaruh private key di `index.html`.
