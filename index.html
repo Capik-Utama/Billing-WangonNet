@@ -394,6 +394,14 @@
       .cards { gap:3px; }
       .details { gap:4px; margin-top:4px; }
     }
+    .reference-table { min-width:0; width:max-content; font-size:12px; }
+    .reference-table th, .reference-table td { padding:4px 6px; max-width:220px; overflow:hidden; text-overflow:ellipsis; }
+    .reference-table th:first-child, .reference-table td:first-child { width:76px; max-width:76px; }
+    @media (max-width:760px) {
+      .reference-table { font-size:11px; }
+      .reference-table th, .reference-table td { padding:3px 5px; max-width:170px; }
+      .reference-table th:first-child, .reference-table td:first-child { width:54px; max-width:54px; }
+    }
   </style>
 </head>
 <body>
@@ -496,15 +504,15 @@
       </dialog>
 
       <section class="page-view reference-panel customer-panel" id="odp" hidden aria-labelledby="odpTitle">
-        <div class="customer-head"><div class="customer-navigation"><button type="button" class="back-dashboard" data-reference-back>← Beranda</button><button type="button" class="primary" data-reference-add="odp">TAMBAH ODP</button></div><div><h2 id="odpTitle">Data ODP</h2><p>Daftar Optical Distribution Point yang tersimpan di Supabase.</p></div><div class="customer-actions"><button type="button" class="secondary" data-reference-refresh="odp">↻ Muat ulang</button></div></div>
+        <div class="customer-head"><div class="customer-navigation"><button type="button" class="back-dashboard" data-reference-back>← Beranda</button><button type="button" class="primary" data-reference-add="odp">TAMBAH ODP</button></div><div><h2 id="odpTitle">Data ODP</h2><p>Daftar Optical Distribution Point yang tersimpan di Supabase.</p></div></div>
         <div class="customer-status reference-status" id="odpStatus" role="status"></div><div class="customer-table-wrap reference-table-wrap"><table class="customer-table reference-table"><thead id="odpHead"></thead><tbody id="odpBody"></tbody></table><div class="empty-customers reference-empty" id="odpEmpty" hidden>Tidak ada data ODP.</div></div>
       </section>
       <section class="page-view reference-panel customer-panel" id="area" hidden aria-labelledby="areaTitle">
-        <div class="customer-head"><div class="customer-navigation"><button type="button" class="back-dashboard" data-reference-back>← Beranda</button><button type="button" class="primary" data-reference-add="area">TAMBAH AREA</button></div><div><h2 id="areaTitle">Data Area</h2><p>Daftar area layanan dan kode cabangnya.</p></div><div class="customer-actions"><button type="button" class="secondary" data-reference-refresh="area">↻ Muat ulang</button></div></div>
+        <div class="customer-head"><div class="customer-navigation"><button type="button" class="back-dashboard" data-reference-back>← Beranda</button><button type="button" class="primary" data-reference-add="area">TAMBAH AREA</button></div><div><h2 id="areaTitle">Data Area</h2><p>Daftar area layanan dan kode cabangnya.</p></div></div>
         <div class="customer-status reference-status" id="areaStatus" role="status"></div><div class="customer-table-wrap reference-table-wrap"><table class="customer-table reference-table"><thead id="areaHead"></thead><tbody id="areaBody"></tbody></table><div class="empty-customers reference-empty" id="areaEmpty" hidden>Tidak ada data area.</div></div>
       </section>
       <section class="page-view reference-panel customer-panel" id="paket" hidden aria-labelledby="paketTitle">
-        <div class="customer-head"><div class="customer-navigation"><button type="button" class="back-dashboard" data-reference-back>← Beranda</button><button type="button" class="primary" data-reference-add="paket">TAMBAH PAKET</button></div><div><h2 id="paketTitle">Data Paket</h2><p>Daftar paket internet, harga, dan profil MikroTik.</p></div><div class="customer-actions"><button type="button" class="secondary" data-reference-refresh="paket">↻ Muat ulang</button></div></div>
+        <div class="customer-head"><div class="customer-navigation"><button type="button" class="back-dashboard" data-reference-back>← Beranda</button><button type="button" class="primary" data-reference-add="paket">TAMBAH PAKET</button></div><div><h2 id="paketTitle">Data Paket</h2><p>Daftar paket internet, harga, dan profil MikroTik.</p></div></div>
         <div class="customer-status reference-status" id="paketStatus" role="status"></div><div class="customer-table-wrap reference-table-wrap"><table class="customer-table reference-table"><thead id="paketHead"></thead><tbody id="paketBody"></tbody></table><div class="empty-customers reference-empty" id="paketEmpty" hidden>Tidak ada data paket.</div></div>
       </section>
       <dialog class="customer-detail-dialog" id="referenceDetailDialog" aria-labelledby="referenceDetailTitle">
