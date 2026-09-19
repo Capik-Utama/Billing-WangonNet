@@ -244,6 +244,9 @@
     .customer-detail-actions button { border:1px solid var(--line); border-radius:8px; padding:10px 14px; font:inherit; font-weight:800; cursor:pointer; }
     .customer-detail-actions .primary { background:var(--accent); color:var(--accent-ink); border-color:var(--accent); }
     .customer-detail-actions .danger { background:#b42318; color:#fff; border-color:#b42318; }
+    .customer-status-names { display:grid; gap:6px; max-height:220px; overflow:auto; margin:0; padding:0 2px; list-style:none; }
+    .customer-status-name { width:100%; border:1px solid var(--line); border-radius:7px; padding:9px 10px; background:#f8fbff; color:var(--ink); text-align:left; font:inherit; font-weight:700; cursor:pointer; }
+    .customer-status-name:hover,.customer-status-name:focus-visible { border-color:var(--accent); color:var(--accent); outline:2px solid rgba(8,125,240,.2); }
     .reference-password-label { display:grid; gap:7px; color:var(--muted); font-size:13px; font-weight:800; }
     .reference-password-label input { width:100%; border:1px solid var(--line); border-radius:7px; padding:9px 10px; color:var(--ink); background:#fff; font:inherit; }
     .reference-password-label input:focus { outline:2px solid rgba(8,125,240,.2); border-color:var(--accent); }
@@ -515,6 +518,7 @@
           <form method="dialog" class="customer-detail-form">
             <h3 id="customerStatusTitle">Konfirmasi Status Pelanggan</h3>
             <p class="customer-detail-subtitle" id="customerStatusSubtitle">Pastikan perubahan status pelanggan sudah benar.</p>
+            <ul class="customer-status-names" id="customerStatusNames" aria-label="Daftar pelanggan yang dipilih"></ul>
             <div class="customer-detail-actions"><button type="button" id="cancelCustomerStatus">Batal</button><button type="button" class="primary" id="confirmCustomerStatus">Konfirmasi</button></div>
           </form>
         </dialog>
@@ -727,6 +731,15 @@
       const action = status === 'Aktif' ? 'mengaktifkan' : 'menonaktifkan';
       document.getElementById('customerStatusTitle').textContent = `${status === 'Aktif' ? 'Aktifkan' : 'Nonaktifkan'} Pelanggan`;
       document.getElementById('customerStatusSubtitle').textContent = `Anda akan ${action} ${activeCustomerStatus.selected.length} pelanggan. Lanjutkan?`;
+      const names = document.getElementById('customerStatusNames');
+      names.innerHTML = activeCustomerStatus.selected.map((customer) => `<li><button type="button" class="customer-status-name" data-customer-code="${escapeCell(customer.customer_code || '')}">${escapeCell(customer.name || customer.customer_code || 'Tanpa nama')}</button></li>`).join('');
+      names.querySelectorAll('.customer-status-name').forEach((button) => button.addEventListener('click', () => {
+        const customer = activeCustomerStatus?.selected.find((item) => String(item.customer_code || '') === button.dataset.customerCode);
+        if (!customer) return;
+        customerStatusDialog.close();
+        activeCustomerStatus = null;
+        showCustomerDetail(customer);
+      }));
       document.getElementById('confirmCustomerStatus').textContent = status === 'Aktif' ? 'Aktifkan' : 'Nonaktifkan';
       customerStatusDialog.showModal();
     };
