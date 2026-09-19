@@ -183,6 +183,8 @@
     .customer-actions { display:flex; flex-wrap:wrap; gap:8px; justify-content:flex-end; }
     .customer-actions button, .file-label { border:0; border-radius:9px; padding:10px 12px; font:inherit; font-weight:800; cursor:pointer; background:var(--accent); color:var(--accent-ink); }
     .customer-actions button.secondary, .file-label.secondary { background:#e8f1fb; color:var(--ink); border:1px solid var(--line); }
+    .customer-actions button.danger { background:#b42318; color:#fff; }
+    .customer-actions button.danger:hover, .customer-actions button.danger:focus-visible { background:#8f1c14; outline:3px solid rgba(180,35,24,.25); outline-offset:2px; }
     .file-label input { display:none; }
     .customer-status { min-height:22px; color:var(--muted); font-size:13px; font-weight:700; margin:10px 0; }
     .customer-table-wrap { overflow-x:auto; overflow-y:hidden; width:100%; border:1px solid var(--line); border-radius:11px; -webkit-overflow-scrolling:touch; }
@@ -245,11 +247,21 @@
           <div class="customer-actions" aria-label="Aksi data pelanggan">
             <label class="file-label secondary" id="importCustomerLabel" hidden>Import<input type="file" id="importCustomerFile" accept=".xlsx,.xls" /></label>
             <button type="button" class="secondary" id="exportCustomerButton" hidden>Export</button>
+            <button type="button" class="danger" id="deleteAllDataButton" hidden>Hapus Semua Data</button>
           </div>
         </div>
         <div class="customer-status" id="customerStatus" role="status"></div>
         <div class="customer-table-wrap"><table class="customer-table"><thead id="customerHead"></thead><tbody id="customerBody"></tbody></table><div class="empty-customers" id="customerEmpty" hidden>Tidak ada data pelanggan.</div></div><div class="pagination" id="customerPagination"></div>
       </section>
+
+      <dialog id="deleteAllDataDialog" aria-labelledby="deleteAllDataTitle">
+        <form method="dialog" class="delete-dialog-form">
+          <h3 id="deleteAllDataTitle">Hapus Semua Data</h3>
+          <p>Tindakan ini menghapus seluruh data operasional billing dan tidak dapat dibatalkan. Akun pengguna tetap dipertahankan.</p>
+          <label>Password login developer<input id="deleteAllDataPassword" type="password" autocomplete="current-password" required></label>
+          <div class="delete-dialog-actions"><button type="button" id="cancelDeleteAllData">Batal</button><button type="button" class="danger" id="confirmDeleteAllData">Hapus Permanen</button></div>
+        </form>
+      </dialog>
 
       <section class="page-view reference-panel" id="odp" hidden aria-labelledby="odpTitle">
         <div class="reference-head"><div><h2 id="odpTitle">Data ODP</h2><p>Daftar Optical Distribution Point yang tersimpan di Supabase.</p></div><div class="reference-actions"><button type="button" data-reference-refresh="odp">↻ Muat ulang</button></div></div>
@@ -277,7 +289,7 @@
     themeButtons.forEach((button) => button.addEventListener('click', () => applyTheme(button.dataset.theme)));
     const loginForm = document.getElementById('loginForm');
     const loginError = document.getElementById('loginError');
-    const setAuthenticated = (user) => { window.currentUser=user; document.body.classList.add('authenticated'); document.querySelector('.welcome').textContent = `● ${user.displayName || user.username} (${user.role})`; const importLabel=document.getElementById('importCustomerLabel'); const exportButton=document.getElementById('exportCustomerButton'); importLabel.hidden=user.role!=='developer'; exportButton.hidden=!['developer','admin'].includes(user.role); };
+    const setAuthenticated = (user) => { window.currentUser=user; document.body.classList.add('authenticated'); document.querySelector('.welcome').textContent = `● ${user.displayName || user.username} (${user.role})`; const importLabel=document.getElementById('importCustomerLabel'); const exportButton=document.getElementById('exportCustomerButton'); const deleteButton=document.getElementById('deleteAllDataButton'); importLabel.hidden=user.role!=='developer'; exportButton.hidden=!['developer','admin'].includes(user.role); deleteButton.hidden=user.role!=='developer'; };
     fetch('/api/session').then((response) => response.ok ? response.json() : Promise.reject()).then(({ user }) => { setAuthenticated(user); loadBillingSummary(); }).catch(() => {});
     loginForm.addEventListener('submit', async (event) => { event.preventDefault(); const button = loginForm.querySelector('button'); button.disabled = true; loginError.textContent = ''; try { const response = await fetch('/api/login', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(Object.fromEntries(new FormData(loginForm))) }); const result = await response.json(); if (!response.ok) throw new Error(result.error || 'Login gagal'); setAuthenticated(result.user); loadBillingSummary(); } catch (error) { loginError.textContent = error.message; } finally { button.disabled = false; } });
     applyTheme(localStorage.getItem('billing-theme') || 'biru');
@@ -294,6 +306,24 @@
     const loadBillingSummary = async () => { try { const response = await fetch('/api/billing', { cache: 'no-store' }); if (!response.ok) throw new Error('Ringkasan billing tidak tersedia'); const data = await response.json(); const summary = data.summary || {}; document.getElementById('customerCount').textContent = (summary.total || 0).toLocaleString('id-ID'); document.getElementById('unpaidCount').textContent = (summary.unpaid || 0).toLocaleString('id-ID'); document.getElementById('paidCount').textContent = (summary.paid || 0).toLocaleString('id-ID'); document.getElementById('revenueAmount').textContent = formatRupiah(summary.revenue); document.getElementById('receivableAmount').textContent = formatRupiah(summary.receivable); window.billingState = data; } catch (error) { console.warn(error.message); } };
     const importCustomerFile = document.getElementById('importCustomerFile');
     const exportCustomerButton = document.getElementById('exportCustomerButton');
+    const deleteAllDataButton = document.getElementById('deleteAllDataButton');
+    const deleteAllDataDialog = document.getElementById('deleteAllDataDialog');
+    const deleteAllDataPassword = document.getElementById('deleteAllDataPassword');
+    const cancelDeleteAllData = document.getElementById('cancelDeleteAllData');
+    const confirmDeleteAllData = document.getElementById('confirmDeleteAllData');
+    deleteAllDataButton.addEventListener('click', () => { deleteAllDataPassword.value=''; deleteAllDataDialog.showModal(); setTimeout(() => deleteAllDataPassword.focus(), 0); });
+    cancelDeleteAllData.addEventListener('click', () => deleteAllDataDialog.close());
+    confirmDeleteAllData.addEventListener('click', async () => {
+      const password=deleteAllDataPassword.value;
+      if (!password) { deleteAllDataPassword.focus(); return; }
+      if (!window.confirm('Yakin ingin menghapus SEMUA data operasional? Tindakan ini tidak dapat dibatalkan.')) return;
+      confirmDeleteAllData.disabled=true;
+      try {
+        const response=await fetch('/api/workbook',{method:'DELETE',headers:{'Content-Type':'application/json'},body:JSON.stringify({password})});
+        const result=await response.json(); if (!response.ok) throw new Error(result.error||'Penghapusan gagal');
+        deleteAllDataDialog.close(); window.billingState=null; customers=[]; renderCustomers(); await loadBillingSummary(); setCustomerStatus(result.message||'Semua data berhasil dihapus.');
+      } catch(error) { setCustomerStatus(error.message,true); } finally { confirmDeleteAllData.disabled=false; }
+    });
     const readWorkbookForImport = async (file) => {
       const buffer=await file.arrayBuffer(); const workbook=XLSX.read(buffer,{type:'array',cellFormula:true,cellDates:true});
       const sheets=workbook.SheetNames.map((name,index)=>{ const ws=workbook.Sheets[name]; const matrix=XLSX.utils.sheet_to_json(ws,{header:1,defval:'',raw:false}); const headerIndex=matrix.findIndex(row=>row.some(value=>/kode paket|nama paket|kode pelanggan|kode cabang|area kode|kapasitas|pppoe usename/i.test(String(value||'')))); const chosenIndex=headerIndex<0?0:headerIndex; let header=matrix[chosenIndex]||[]; if(name.toLowerCase()==='paket') header=['branch_code','kode_paket','nama_paket','harga','profile_name_mikrotik','upload_max_limit_mbps','upload_burst_limit_mbps','upload_burst_threshold_mbps','upload_burst_time_seconds','download_max_limit_mbps','download_burst_limit_mbps','download_burst_threshold_mbps','download_burst_time_seconds']; if(name.toLowerCase()==='odp') header=['location_code','odp_name','area_code','capacity','used_ports','latitude','longitude','odp_code','location_code_detail','location_name']; const rows=matrix.slice(chosenIndex+1).filter(row=>row.some(value=>value!==''&&value!==null&&value!==undefined)).map(row=>Object.fromEntries(header.map((label,i)=>[String(label||`Kolom ${i+1}`).trim(),row[i]??'']))); return {index,name,rows}; });
