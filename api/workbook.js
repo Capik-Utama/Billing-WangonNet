@@ -189,6 +189,15 @@ function uniqueRows(rows, keyFn) {
   return { rows: unique, duplicates };
 }
 
+async function saveSourceRows(sheets) {
+  const batchId = crypto.randomUUID();
+  await supabase('data_import_batches', { method: 'POST', headers: { Prefer: 'return=minimal' }, body: JSON.stringify({ id: batchId, spreadsheet_id: `manual-${Date.now()}`, source_title: 'Import workbook manual', status: 'completed', notes: 'Arsip baris Excel asli, termasuk kode duplikat.' }) });
+  const rows = [];
+  for (const sheet of sheets) (sheet.rows || []).forEach((row, index) => rows.push({ batch_id: batchId, sheet_name: String(sheet.name || `Sheet${Number(sheet.index || 0) + 1}`), source_row_number: index + 2, row_data: row }));
+  for (let i = 0; i < rows.length; i += 250) await supabase('source_sheet_rows', { method: 'POST', headers: { Prefer: 'return=minimal' }, body: JSON.stringify(rows.slice(i, i + 250)) });
+  return { batch_id: batchId, rows: rows.length };
+}
+
 async function buildImportPreview(valid) {
   const [customers, packages, areas, odps] = await Promise.all([
     supabase('customers?select=customer_code,name&limit=10000'),
@@ -206,7 +215,7 @@ async function buildImportPreview(valid) {
     packages: compare(valid.packages, packages, (row) => `${row.branch_code}|${row.package_code}`, (row) => `${row.package_code || '(tanpa kode)'} — ${row.package_name || '(tanpa nama)'}`),
     areas: compare(valid.areas, areas, (row) => row.area_code, (row) => `${row.area_code || '(tanpa kode)'} — ${row.area_name || '(tanpa nama)'}`),
     odps: compare(valid.odps, odps, (row) => row.odp_code, (row) => `${row.odp_code || '(tanpa kode)'} — ${row.odp_name || '(tanpa nama)'}`),
-    skipped: valid.skipped,
+    conflicts: valid.conflicts,
     total_rows: valid.customers.length + valid.packages.length + valid.areas.length + valid.odps.length
   };
 }
@@ -267,9 +276,10 @@ module.exports = async function handler(req, res) {
     const areaRows = uniqueRows(grouped.areas.filter((r) => r.area_code), (r) => r.area_code);
     const odpRows = uniqueRows(grouped.odps.filter((r) => r.odp_code), (r) => r.odp_code);
     const customerRows = uniqueRows(grouped.customers.filter((r) => r.name || r.customer_code), (r) => r.customer_code);
-    const valid = { packages: packageRows.rows, areas: areaRows.rows, odps: odpRows.rows, customers: customerRows.rows, skipped: { duplicate_packages: packageRows.duplicates, duplicate_areas: areaRows.duplicates, duplicate_odps: odpRows.duplicates, duplicate_customers: customerRows.duplicates } };
+    const valid = { packages: packageRows.rows, areas: areaRows.rows, odps: odpRows.rows, customers: customerRows.rows, conflicts: { duplicate_packages: packageRows.duplicates, duplicate_areas: areaRows.duplicates, duplicate_odps: odpRows.duplicates, duplicate_customers: customerRows.duplicates } };
     const preview = await buildImportPreview(valid);
     if (payload.confirm !== true) return json(res, 200, { ok: true, preview, message: 'Pratinjau import siap. Belum ada data yang disimpan.' });
+    const sourceArchive = await saveSourceRows(sheets);
     await upsert('areas', valid.areas, 'area_code'); report.areas = valid.areas.length;
     await upsert('odps', valid.odps, 'odp_code'); report.odps = valid.odps.length;
     await upsert('internet_packages', valid.packages, 'branch_code,package_code'); report.packages = valid.packages.length;
@@ -278,7 +288,7 @@ module.exports = async function handler(req, res) {
     const idByCode = new Map(saved.filter((row) => row.customer_code).map((row) => [row.customer_code, row.id]));
     const networks = valid.customers.map((row) => { const customer_id = idByCode.get(row.customer_code); return customer_id ? { customer_id, ...row._network } : null; }).filter(Boolean);
     if (networks.length) { await upsert('customer_network', networks, 'customer_id'); report.network = networks.length; }
-    return json(res, 200, { ok: true, report, message: 'Import selesai. Sheet ke-8 dilewati sesuai permintaan.' });
+    return json(res, 200, { ok: true, report, source_archive: sourceArchive, message: 'Import selesai. Semua baris Excel asli diarsipkan, termasuk baris dengan kode duplikat.' });
   } catch (error) { return json(res, 500, { error: error.message }); }
 };
 

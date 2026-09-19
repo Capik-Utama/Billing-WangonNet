@@ -266,7 +266,7 @@
         <dialog class="import-preview-dialog" id="importPreviewDialog" aria-labelledby="importPreviewTitle">
           <form method="dialog" class="import-preview-form">
             <h3 id="importPreviewTitle">Pratinjau Import</h3>
-            <p>Periksa perubahan berikut. Belum ada data yang disimpan sampai Anda menekan “Lanjutkan Import”.</p>
+            <p>Periksa perubahan berikut. Belum ada data yang disimpan sampai Anda menekan “Lanjutkan Import”. Semua baris Excel asli, termasuk kode yang sama, akan tetap diarsipkan.</p>
             <div class="import-preview-list" id="importPreviewList"></div>
             <div class="import-preview-actions"><button type="button" id="cancelImportPreview">Batal</button><button type="button" class="primary" id="confirmImportPreview">Lanjutkan Import</button></div>
           </form>
@@ -356,7 +356,7 @@
     };
     const renderImportPreview = (preview) => {
       const sections=[['customers','Data Pelanggan'],['packages','Data Paket'],['areas','Data Area'],['odps','Data ODP']];
-      importPreviewList.innerHTML=sections.map(([key,label])=>{const item=preview[key]||{}; const details=Array.isArray(item.details)?item.details:[]; const duplicate=Number(preview.skipped?.[`duplicate_${key}`]||0); return `<details><summary>${escapeCell(label)}: ${item.new||0} baru, ${item.updated||0} edit${duplicate?`, ${duplicate} duplikat dilewati`:''}</summary><ul>${details.length?details.map(detail=>`<li>${escapeCell(detail.action==='edit'?'Edit: ':'Baru: ')}${escapeCell(detail.label)}</li>`).join(''):'<li>Tidak ada perubahan</li>'}</ul></details>`;}).join('');
+      importPreviewList.innerHTML=sections.map(([key,label])=>{const item=preview[key]||{}; const details=Array.isArray(item.details)?item.details:[]; const duplicate=Number(preview.conflicts?.[`duplicate_${key}`]||0); return `<details><summary>${escapeCell(label)}: ${item.new||0} baru, ${item.updated||0} edit${duplicate?`, ${duplicate} kode sama (tetap diarsipkan)`:''}</summary><ul>${details.length?details.map(detail=>`<li>${escapeCell(detail.action==='edit'?'Edit: ':'Baru: ')}${escapeCell(detail.label)}</li>`).join(''):'<li>Tidak ada perubahan</li>'}</ul></details>`;}).join('');
     };
     cancelImportPreview.addEventListener('click', () => { pendingImportPayload=null; importPreviewDialog.close(); });
     confirmImportPreview.addEventListener('click', async () => {
