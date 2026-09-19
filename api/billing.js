@@ -24,12 +24,17 @@ async function billingRecords() {
   return supabase(`customers?select=${encodeURIComponent(select)}&order=source_no.asc&limit=1000`);
 }
 
+async function packageRecords() {
+  return supabase('internet_packages?select=package_code,package_name,price,mikrotik_profile_name,download_max_limit_mbps&order=package_name.asc&limit=1000');
+}
+
 module.exports = async function handler(req, res) {
   res.setHeader('Content-Type', 'application/json; charset=utf-8');
   res.setHeader('Cache-Control', 'no-store');
   if (req.method !== 'GET') { res.statusCode = 405; return res.end(JSON.stringify({ error: 'Method tidak diizinkan' })); }
   try {
-    const billing = buildBillingFromRecords(await billingRecords());
+    const [records, packages] = await Promise.all([billingRecords(), packageRecords()]);
+    const billing = buildBillingFromRecords(records, packages);
     const url = new URL(req.url, 'http://localhost');
     const customerCode = url.searchParams.get('customer');
     if (customerCode) {
