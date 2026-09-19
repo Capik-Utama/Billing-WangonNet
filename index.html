@@ -243,10 +243,8 @@
           <button type="button" class="back-dashboard" id="backDashboard">← Beranda</button>
           <div><h2 id="customerTitle">Data Pelanggan</h2><p id="customerSubtitle">Memuat data pelanggan dari billing…</p></div>
           <div class="customer-actions" aria-label="Aksi data pelanggan">
-
-
-
-
+            <label class="file-label secondary" id="importCustomerLabel" hidden>Import<input type="file" id="importCustomerFile" accept=".xlsx,.xls" /></label>
+            <button type="button" class="secondary" id="exportCustomerButton" hidden>Export</button>
           </div>
         </div>
         <div class="customer-status" id="customerStatus" role="status"></div>
@@ -279,7 +277,7 @@
     themeButtons.forEach((button) => button.addEventListener('click', () => applyTheme(button.dataset.theme)));
     const loginForm = document.getElementById('loginForm');
     const loginError = document.getElementById('loginError');
-    const setAuthenticated = (user) => { document.body.classList.add('authenticated'); document.querySelector('.welcome').textContent = `● ${user.displayName || user.username} (${user.role})`; };
+    const setAuthenticated = (user) => { window.currentUser=user; document.body.classList.add('authenticated'); document.querySelector('.welcome').textContent = `● ${user.displayName || user.username} (${user.role})`; const importLabel=document.getElementById('importCustomerLabel'); const exportButton=document.getElementById('exportCustomerButton'); importLabel.hidden=user.role!=='developer'; exportButton.hidden=!['developer','admin'].includes(user.role); };
     fetch('/api/session').then((response) => response.ok ? response.json() : Promise.reject()).then(({ user }) => { setAuthenticated(user); loadBillingSummary(); }).catch(() => {});
     loginForm.addEventListener('submit', async (event) => { event.preventDefault(); const button = loginForm.querySelector('button'); button.disabled = true; loginError.textContent = ''; try { const response = await fetch('/api/login', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(Object.fromEntries(new FormData(loginForm))) }); const result = await response.json(); if (!response.ok) throw new Error(result.error || 'Login gagal'); setAuthenticated(result.user); loadBillingSummary(); } catch (error) { loginError.textContent = error.message; } finally { button.disabled = false; } });
     applyTheme(localStorage.getItem('billing-theme') || 'biru');
@@ -294,6 +292,31 @@
     const customerPanel = document.getElementById('pelanggan');
     const formatRupiah = (value) => new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', maximumFractionDigits: 0 }).format(Number(value) || 0);
     const loadBillingSummary = async () => { try { const response = await fetch('/api/billing', { cache: 'no-store' }); if (!response.ok) throw new Error('Ringkasan billing tidak tersedia'); const data = await response.json(); const summary = data.summary || {}; document.getElementById('customerCount').textContent = (summary.total || 0).toLocaleString('id-ID'); document.getElementById('unpaidCount').textContent = (summary.unpaid || 0).toLocaleString('id-ID'); document.getElementById('paidCount').textContent = (summary.paid || 0).toLocaleString('id-ID'); document.getElementById('revenueAmount').textContent = formatRupiah(summary.revenue); document.getElementById('receivableAmount').textContent = formatRupiah(summary.receivable); window.billingState = data; } catch (error) { console.warn(error.message); } };
+    const importCustomerFile = document.getElementById('importCustomerFile');
+    const exportCustomerButton = document.getElementById('exportCustomerButton');
+    const readWorkbookForImport = async (file) => {
+      const buffer=await file.arrayBuffer(); const workbook=XLSX.read(buffer,{type:'array',cellFormula:true,cellDates:true});
+      const sheets=workbook.SheetNames.map((name,index)=>{ const ws=workbook.Sheets[name]; const matrix=XLSX.utils.sheet_to_json(ws,{header:1,defval:'',raw:false}); const headerIndex=matrix.findIndex(row=>row.some(value=>/kode paket|nama paket|kode pelanggan|kode cabang|area kode|kapasitas|pppoe usename/i.test(String(value||'')))); const chosenIndex=headerIndex<0?0:headerIndex; let header=matrix[chosenIndex]||[]; if(name.toLowerCase()==='paket') header=['branch_code','kode_paket','nama_paket','harga','profile_name_mikrotik','upload_max_limit_mbps','upload_burst_limit_mbps','upload_burst_threshold_mbps','upload_burst_time_seconds','download_max_limit_mbps','download_burst_limit_mbps','download_burst_threshold_mbps','download_burst_time_seconds']; if(name.toLowerCase()==='odp') header=['location_code','odp_name','area_code','capacity','used_ports','latitude','longitude','odp_code','location_code_detail','location_name']; const rows=matrix.slice(chosenIndex+1).filter(row=>row.some(value=>value!==''&&value!==null&&value!==undefined)).map(row=>Object.fromEntries(header.map((label,i)=>[String(label||`Kolom ${i+1}`).trim(),row[i]??'']))); return {index,name,rows}; });
+      return {sheets};
+    };
+    importCustomerFile.addEventListener('change', async (event) => {
+      const file=event.target.files?.[0]; if(!file)return; setCustomerStatus(`Membaca ${file.name}…`);
+      try { const payload=await readWorkbookForImport(file); const response=await fetch('/api/workbook',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)}); const result=await response.json(); if(!response.ok)throw new Error(result.error||'Import gagal'); const report=result.report||{}; setCustomerStatus(`Import selesai: ${report.customers||0} pelanggan, ${report.odps||0} ODP, ${report.areas||0} area, ${report.packages||0} paket. Sheet8 dilewati (${report.ignored_sheet_8||0} baris).`); await loadBillingSummary(); await loadCustomers(); } catch(error) { setCustomerStatus(error.message,true); } finally { event.target.value=''; }
+    });
+    const exportWorkbook = async () => {
+      setCustomerStatus('Menyiapkan workbook export…');
+      try { const response=await fetch('/api/workbook',{cache:'no-store'}); const result=await response.json(); if(!response.ok)throw new Error(result.error||'Export gagal'); const data=result.data||{}; const wb=XLSX.utils.book_new();
+        const add=(name,headers,rows)=>{const ws=XLSX.utils.aoa_to_sheet([headers,...rows]);XLSX.utils.book_append_sheet(wb,ws,name);return ws;};
+        add('Paket',['Kode Cabang','Kode Paket','Nama Paket','Harga','Profile name (mikrotik)','Upload Max Limit','Upload Burst Limit','Upload Burst Threshold','Upload Burst Time','Download Max Limit','Download Burst Limit','Download Burst Threshold','Download Burst Time'],(data.packages||[]).map(r=>[r.branch_code,r.package_code,r.package_name,r.price,r.mikrotik_profile_name,r.upload_max_limit_mbps,r.upload_burst_limit_mbps,r.upload_burst_threshold_mbps,r.upload_burst_time_seconds,r.download_max_limit_mbps,r.download_burst_limit_mbps,r.download_burst_threshold_mbps,r.download_burst_time_seconds]));
+        add('Area',['Kode','Nama','Kode Cabang','Singkatan'],(data.areas||[]).map(r=>[r.area_code,r.area_name,r.branch_code,r.area_abbreviation]));
+        add('ODP',['Kode Lokasi','Nama','Area Kode','Kapasitas','Terpakai','Latitude','Longitude','Kode ODP','Location Code','Location Name'],(data.odps||[]).map(r=>[r.location_code,r.odp_name,r.area_code,r.capacity,r.used_ports,r.latitude,r.longitude,r.odp_code,r.location_code,r.location_name]));
+        const networks=new Map((data.network||[]).map(r=>[r.customer_id,r])); const odps=new Map((data.odps||[]).map(r=>[r.odp_code,r])); const headers=['NO','Nama','Kode Pelanggan','Cabang','Area','Paket Internet','Sales','No KTP','No HP','Email','WhatsApp','Alamat','RT','RW','Desa/Kelurahan','Kecamatan','Kabupaten/Kota','Latitude','Longitude','PPPoE Username','PPPoE Password','ONU Serial','OLT','PON','VLAN','Formula ODP','ODP','Port ODP','Tipe Modem','MAC Address','IP Address','Redaman ONU','Redaman ODP','RX ONT','RX ODP','Speedtest Download','Speedtest Upload','Ping (ms)','Jitter (ms)','Catatan Test','Tanggal Bergabung','Hari Tagihan','Status','Masa Aktif'];
+        const rows=(data.customers||[]).map((c,i)=>{const n=networks.get(c.id)||{};const odp=odps.get(n.odp_code)||{};const row=[c.source_no,c.name,c.customer_code||'',c.branch_code,c.area_code,c.package_name,c.sales_name,c.national_id,c.phone,c.email,c.whatsapp,c.address,c.rt,c.rw,c.village,c.district,c.city_regency,c.latitude,c.longitude,n.pppoe_username,n.pppoe_password,n.onu_serial,'', '',n.vlan,'',odp.location_code||n.odp_code||'', '',n.modem_type,n.mac_address,n.ip_address,n.onu_attenuation,n.odp_attenuation,n.rx_ont,n.rx_odp,'','','','', '',c.join_date,c.billing_day,c.status,c.active_period]; row[2]={f:`IF(A${i+2}="","","5067-"&TEXT(A${i+2},"0000"))`,v:c.customer_code||`5067-${String(c.source_no||'').padStart(4,'0')}`}; row[22]={f:`IF(AA${i+2}="","","5067 HSGQ ("&MID(AA${i+2},FIND("(",AA${i+2})+1,FIND(".",AA${i+2},FIND("(",AA${i+2}))-FIND("(",AA${i+2})-1)&")")`,v:n.olt||''}; row[23]={f:`IF(AA${i+2}="","",MID(AA${i+2},FIND(".",AA${i+2},FIND(".",AA${i+2},FIND("(",AA${i+2}))+1)+1,FIND(")",AA${i+2},FIND("(",AA${i+2}))-FIND(".",AA${i+2},FIND(".",AA${i+2},FIND("(",AA${i+2}))+1)-1)*1)`,v:n.pon||''}; row[27]={f:`IF(AA${i+2}="","",IF(COUNTIF($AA$2:AA${i+2},AA${i+2})<=VLOOKUP(AA${i+2},ODP!$A:$D,4,FALSE),COUNTIF($AA$2:AA${i+2},AA${i+2}),"Penuh"))`,v:n.odp_port||''}; return row;});
+        const ws=add('pelanggan',headers,rows); ws['!freeze']={xSplit:0,ySplit:1};
+        XLSX.writeFile(wb,`5067-export-${new Date().toISOString().slice(0,10)}.xlsx`); setCustomerStatus(`Export selesai: ${(data.customers||[]).length.toLocaleString('id-ID')} pelanggan dengan formula relasi ODP.`);
+      } catch(error) { setCustomerStatus(error.message,true); }
+    };
+    exportCustomerButton.addEventListener('click',exportWorkbook);
     const customerCount = document.getElementById('customerCount');
     const customerSubtitle = document.getElementById('customerSubtitle');
     const customerStatus = document.getElementById('customerStatus');
