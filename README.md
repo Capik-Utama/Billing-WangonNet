@@ -45,8 +45,6 @@ Langkah setup service account:
 
 Jangan commit file JSON key ke repository dan jangan menaruh private key di `index.html`.
 
-## Data Akun dan login Google
+## Data Akun
 
-Menu `Kelola Data → Data Akun` menyediakan login Google melalui OAuth serta kolom target file Spreadsheet. Aplikasi tidak meminta atau menyimpan password Google. Setelah login, refresh token disimpan sebagai cookie HttpOnly dan digunakan server untuk membaca/menulis Spreadsheet saat tombol manual dijalankan.
-
-OAuth memerlukan environment variable `GOOGLE_OAUTH_CLIENT_ID`, `GOOGLE_OAUTH_CLIENT_SECRET`, `GOOGLE_OAUTH_REDIRECT_URI`, dan `AUTH_SECRET`. Redirect URI production saat ini adalah `https://billing-wangon-net.vercel.app/api/google-auth?action=callback`; URI tersebut harus terdaftar persis di Google Cloud OAuth Client. Scope yang diminta adalah profil email dan `https://www.googleapis.com/auth/spreadsheets`. Akun Google yang login tetap harus memiliki akses Editor terhadap target Spreadsheet.
+Menu `Kelola Data → Data Akun` hanya menyediakan pengaturan target file Spreadsheet. Login Google OAuth sudah dihapus dari aplikasi. Koneksi Spreadsheet tetap menggunakan service account atau access token server-side melalui environment yang didokumentasikan pada bagian Modul Data Paket.

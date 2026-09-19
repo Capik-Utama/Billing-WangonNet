@@ -251,8 +251,6 @@
       <section class="page-view customer-panel" id="akun" hidden aria-labelledby="accountTitle">
         <div class="customer-head"><button type="button" class="back-dashboard" id="backAccountDashboard">← Beranda</button><div><h2 id="accountTitle">Data Akun</h2><p id="accountSubtitle">Atur akun Google dan target Spreadsheet untuk pertukaran data manual.</p></div></div>
         <div class="account-form">
-          <label>Status Akun Google<input id="googleAccountStatus" type="text" readonly value="Memeriksa koneksi…"></label>
-          <div class="account-actions"><button type="button" id="connectGoogleAccount">Login akun Google</button><button type="button" class="secondary" id="disconnectGoogleAccount">Putuskan akun</button></div>
           <label for="targetSpreadsheetUrl">Target file Spreadsheet<input id="targetSpreadsheetUrl" type="url" placeholder="https://docs.google.com/spreadsheets/d/.../edit"></label>
           <div class="account-actions"><button type="button" id="saveSpreadsheetTarget">Simpan target file</button></div>
           <div class="customer-status" id="accountStatus" role="status"></div>
@@ -321,15 +319,13 @@
     const showCustomers = () => { dashboardPage.hidden=true; accountPanel.hidden=true; sheetPanel.hidden=true; customerPanel.hidden=false; history.replaceState(null, '', '#pelanggan'); loadCustomers(); };
     document.querySelectorAll('a[href="#pelanggan"]').forEach(a=>a.addEventListener('click',e=>{e.preventDefault();showCustomers();}));
     document.querySelectorAll('a[href="#dashboard"]').forEach(a=>a.addEventListener('click',e=>{e.preventDefault();showDashboard();}));
-    const showAccount = async () => { dashboardPage.hidden=true; customerPanel.hidden=true; sheetPanel.hidden=true; accountPanel.hidden=false; history.replaceState(null,'','#akun'); try { const [authResponse, settingsResponse] = await Promise.all([fetch('/api/google-auth?action=status',{cache:'no-store'}),fetch('/api/google-settings',{cache:'no-store'})]); const auth=await authResponse.json(); const settings=await settingsResponse.json(); document.getElementById('googleAccountStatus').value=auth.connected?`Terhubung: ${auth.email||'akun Google'}`:'Belum terhubung'; document.getElementById('targetSpreadsheetUrl').value=settings.targetUrl||''; } catch(error) { document.getElementById('accountStatus').textContent=error.message; } };
+    const showAccount = async () => { dashboardPage.hidden=true; customerPanel.hidden=true; sheetPanel.hidden=true; accountPanel.hidden=false; history.replaceState(null,'','#akun'); try { const response=await fetch('/api/google-settings',{cache:'no-store'}); const settings=await response.json(); if(!response.ok) throw new Error(settings.error||'Pengaturan Spreadsheet tidak tersedia'); document.getElementById('targetSpreadsheetUrl').value=settings.targetUrl||''; } catch(error) { document.getElementById('accountStatus').textContent=error.message; } };
     document.querySelectorAll('a[href="#akun"]').forEach(a=>a.addEventListener('click',e=>{e.preventDefault();showAccount();}));
     const customerCard = document.getElementById('customerCard');
     customerCard.addEventListener('click', (event) => { if (!event.target.closest('a')) showCustomers(); });
     customerCard.addEventListener('keydown', (event) => { if ((event.key === 'Enter' || event.key === ' ') && !event.target.closest('a')) { event.preventDefault(); showCustomers(); } });
     document.getElementById('backDashboard').addEventListener('click', showDashboard);
     document.getElementById('backAccountDashboard').addEventListener('click', showDashboard);
-    document.getElementById('connectGoogleAccount').addEventListener('click',()=>{window.location.href='/api/google-auth?action=start';});
-    document.getElementById('disconnectGoogleAccount').addEventListener('click',async()=>{await fetch('/api/google-auth?action=disconnect');showAccount();});
     document.getElementById('saveSpreadsheetTarget').addEventListener('click',async()=>{const targetUrl=document.getElementById('targetSpreadsheetUrl').value.trim();const response=await fetch('/api/google-settings',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({targetUrl})});const result=await response.json();document.getElementById('accountStatus').textContent=response.ok?'Target Spreadsheet tersimpan.':result.error;});
     customerBody.addEventListener('click', (event) => { const button=event.target.closest('.row-action'); if (!button) return; const labels={edit:'Edit pelanggan',payment:'Pembayaran',activate:'Aktifkan pelanggan',deactivate:'Nonaktifkan pelanggan',delete:'Hapus pelanggan'}; setCustomerStatus(`${labels[button.dataset.action]}: aksi siap diproses untuk pelanggan ini.`); });
     loadCustomers();
