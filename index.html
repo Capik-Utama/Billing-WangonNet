@@ -266,7 +266,12 @@
     .customer-bulk-actions[hidden] { display:none; }
     .customer-bulk-actions { position:fixed; left:50%; bottom:14px; z-index:40; display:flex; align-items:center; gap:8px; padding:8px 10px; border:1px solid var(--line); border-radius:12px; background:#fff; box-shadow:0 10px 30px rgba(22,34,55,.28); transform:translateX(-50%); }
     .customer-bulk-actions strong { color:var(--ink); font-size:12px; white-space:nowrap; }
-    .customer-bulk-actions .row-action { flex:0 0 auto; }
+    .customer-bulk-actions .row-action { flex:0 0 auto; width:38px; height:38px; font-size:18px; border-width:2px; }
+    .customer-bulk-actions [data-bulk-action="edit"] { background:#2563eb; color:#fff; border-color:#1d4ed8; }
+    .customer-bulk-actions [data-bulk-action="payment"] { background:#16a34a; color:#fff; border-color:#15803d; }
+    .customer-bulk-actions [data-bulk-action="activate"] { background:#93c5fd; color:#0b3d91; border-color:#60a5fa; }
+    .customer-bulk-actions [data-bulk-action="deactivate"] { background:#facc15; color:#713f12; border-color:#ca8a04; }
+    .customer-bulk-actions [data-bulk-action="delete"] { background:#dc2626; color:#fff; border-color:#b91c1c; }
     .empty-customers { padding:28px; text-align:center; color:var(--muted); }
     body.theme-gelap .login-card,
     body.theme-gelap .customer-panel,
@@ -294,7 +299,7 @@
     @media (max-width:760px) {
       .customer-head { display:block; }
       .customer-navigation { margin-bottom:14px; flex-wrap:wrap; }
-      .customer-title-inline { flex:1 1 100%; margin-top:2px; }
+      .customer-title-inline { order:-1; flex:1 1 100%; margin:0 0 2px; }
       .customer-title-inline h2, .customer-title-inline p { white-space:normal; }
       .customer-actions { justify-content:flex-start; margin-top:14px; }
       .customer-actions button, .file-label { flex:1 1 calc(50% - 8px); text-align:center; font-size:12px; }
