@@ -199,6 +199,15 @@
     .import-preview-actions { display:flex; justify-content:flex-end; gap:8px; }
     .import-preview-actions button { border:1px solid var(--line); border-radius:8px; padding:10px 14px; font:inherit; font-weight:800; cursor:pointer; }
     .import-preview-actions .primary { background:var(--accent); color:var(--accent-ink); border-color:var(--accent); }
+    .delete-data-scope { display:grid; gap:8px; margin:16px 0 18px; padding:14px; border:1px solid #f0c5c1; border-radius:10px; background:#fff8f7; }
+    .delete-data-scope-title { margin:0 0 2px; color:#8f1c14; font-size:13px; font-weight:800; }
+    .delete-data-scope label { display:flex; align-items:center; gap:9px; color:var(--ink); font-size:14px; font-weight:700; }
+    .delete-data-scope input { width:16px; height:16px; accent-color:#b42318; }
+    .delete-data-scope input:disabled { opacity:1; }
+    .delete-data-note { margin:0 0 16px; color:var(--muted); font-size:12px; }
+    .delete-dialog-actions { display:flex; justify-content:flex-end; gap:8px; }
+    .delete-dialog-actions button { border:1px solid var(--line); border-radius:8px; padding:10px 14px; font:inherit; font-weight:800; cursor:pointer; }
+    .delete-dialog-actions .danger { background:#b42318; color:#fff; border-color:#b42318; }
     .loading-dialog { border:0; border-radius:16px; padding:0; width:min(360px, calc(100vw - 32px)); box-shadow:0 18px 60px rgba(0,0,0,.3); color:var(--ink); }
     .loading-dialog::backdrop { background:rgba(16,42,67,.58); }
     .loading-content { display:grid; justify-items:center; gap:12px; padding:28px 24px; text-align:center; }
@@ -285,6 +294,17 @@
         <form method="dialog" class="delete-dialog-form">
           <h3 id="deleteAllDataTitle">Hapus Semua Data</h3>
           <p>Tindakan ini menghapus seluruh data operasional billing dan tidak dapat dibatalkan. Akun pengguna tetap dipertahankan.</p>
+          <div class="delete-data-scope" aria-labelledby="deleteDataScopeTitle">
+            <p class="delete-data-scope-title" id="deleteDataScopeTitle">Data yang akan dihapus</p>
+            <label><input type="checkbox" checked disabled> Data pelanggan dan data jaringan</label>
+            <label><input type="checkbox" checked disabled> Data paket internet</label>
+            <label><input type="checkbox" checked disabled> Data area, cabang, dan ODP</label>
+            <label><input type="checkbox" checked disabled> Data tagihan, pembayaran, dan notifikasi</label>
+            <label><input type="checkbox" checked disabled> Data PPPoE dan speed test</label>
+            <label><input type="checkbox" checked disabled> Arsip baris import</label>
+            <label><input type="checkbox" checked disabled> Konfigurasi perusahaan dan metode pembayaran</label>
+          </div>
+          <p class="delete-data-note">Semua item di atas dicentang otomatis karena penghapusan dilakukan sekaligus. Akun pengguna developer/admin tidak ikut dihapus.</p>
           <label>Password login developer<input id="deleteAllDataPassword" type="password" autocomplete="current-password" required></label>
           <div class="delete-dialog-actions"><button type="button" id="cancelDeleteAllData">Batal</button><button type="button" class="danger" id="confirmDeleteAllData">Hapus Permanen</button></div>
         </form>
