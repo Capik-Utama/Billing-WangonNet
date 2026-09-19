@@ -59,8 +59,33 @@ async function updateCustomer(payload) {
   return { ok: true, message: 'Perubahan pelanggan berhasil disimpan.' };
 }
 
+async function createCustomer(payload) {
+  const customer = payload.customer || {};
+  const network = payload.network || {};
+  if (!String(customer.name || '').trim()) throw new Error('Nama pelanggan wajib diisi');
+  const customerData = pickFields(customer, customerFields);
+  customerData.name = String(customerData.name).trim();
+  if (!customerData.status) customerData.status = 'Aktif';
+  if (!customerData.join_date) customerData.join_date = new Date().toISOString().slice(0, 10);
+  if (customerData.source_no == null || customerData.source_no === '') {
+    const latest = await supabase('customers?select=source_no&source_no=not.is.null&order=source_no.desc&limit=1');
+    customerData.source_no = Number(latest?.[0]?.source_no || 0) + 1;
+  } else customerData.source_no = Number(customerData.source_no);
+  if (!customerData.customer_code) customerData.customer_code = `5067-${String(customerData.source_no).padStart(4, '0')}`;
+  const created = await supabase('customers', { method: 'POST', headers: { Prefer: 'return=representation' }, body: JSON.stringify([customerData]) });
+  const customerId = created?.[0]?.id;
+  if (customerId && Object.keys(network).length) await supabase('customer_network?on_conflict=customer_id', { method: 'POST', headers: { Prefer: 'resolution=merge-duplicates,return=minimal' }, body: JSON.stringify([{ customer_id: customerId, ...pickFields(network, networkFields) }]) });
+  return { ok: true, message: 'Data pelanggan berhasil ditambahkan ke Supabase.', customer: created?.[0] || customerData };
+}
+
 module.exports = async function handler(req, res) {
   if (!getSession(req)) return json(res, 401, { error: 'Belum login' });
+  if (req.method === 'POST') {
+    try {
+      const payload = typeof req.body === 'string' ? JSON.parse(req.body) : req.body || {};
+      return json(res, 201, await createCustomer(payload));
+    } catch (error) { return json(res, 400, { error: error.message }); }
+  }
   if (req.method === 'PATCH') {
     try {
       const payload = typeof req.body === 'string' ? JSON.parse(req.body) : req.body || {};

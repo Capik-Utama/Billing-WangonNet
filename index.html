@@ -292,6 +292,7 @@
       <section class="page-view customer-panel" id="pelanggan" hidden aria-labelledby="customerTitle">
         <div class="customer-head">
           <button type="button" class="back-dashboard" id="backDashboard">← Beranda</button>
+          <button type="button" class="primary" id="addCustomerButton">+ Tambah Data</button>
           <div><h2 id="customerTitle">Data Pelanggan</h2><p id="customerSubtitle">Memuat data pelanggan dari billing…</p></div>
           <div class="customer-actions" aria-label="Aksi data pelanggan">
             <label class="file-label secondary" id="importCustomerLabel" hidden>Import<input type="file" id="importCustomerFile" accept=".xlsx,.xls" /></label>
@@ -470,6 +471,12 @@
       ['NO', customer.source_no, 'customer', 'source_no'], ['Nama', customer.name, 'customer', 'name'], ['Kode Pelanggan', customer.customer_code, 'customer', 'customer_code'], ['Cabang', customer.branch_code, 'customer', 'branch_code'], ['Area', customer.area_code, 'customer', 'area_code'], ['Paket Internet', customer.package_name, 'customer', 'package_name'], ['Harga', customer.billing?.amount ?? customer.package?.price, null, null, true], ['Sales', customer.sales_name, 'customer', 'sales_name'], ['No KTP', customer.national_id, 'customer', 'national_id'], ['No HP', customer.phone, 'customer', 'phone'], ['Email', customer.email, 'customer', 'email'], ['WhatsApp', customer.whatsapp, 'customer', 'whatsapp'], ['Alamat', customer.address, 'customer', 'address'], ['RT', customer.rt, 'customer', 'rt'], ['RW', customer.rw, 'customer', 'rw'], ['Desa/Kelurahan', customer.village, 'customer', 'village'], ['Kecamatan', customer.district, 'customer', 'district'], ['Kabupaten/Kota', customer.city_regency, 'customer', 'city_regency'], ['Latitude', customer.latitude, 'customer', 'latitude'], ['Longitude', customer.longitude, 'customer', 'longitude'], ['PPPoE Username', network.pppoe_username, 'network', 'pppoe_username'], ['PPPoE Password', network.pppoe_password, 'network', 'pppoe_password'], ['ONU Serial', network.onu_serial, 'network', 'onu_serial'], ['OLT', network.olt, 'network', 'olt'], ['PON', network.pon, 'network', 'pon'], ['VLAN', network.vlan, 'network', 'vlan'], ['Formula ODP', customer.source_formulas?.odp_code, null, null, true], ['ODP', network.odp_code, 'network', 'odp_code'], ['Port ODP', network.odp_port, 'network', 'odp_port'], ['Tipe Modem', network.modem_type, 'network', 'modem_type'], ['MAC Address', network.mac_address, 'network', 'mac_address'], ['IP Address', network.ip_address, 'network', 'ip_address'], ['Redaman ONU', network.onu_attenuation, 'network', 'onu_attenuation'], ['Redaman ODP', network.odp_attenuation, 'network', 'odp_attenuation'], ['RX ONT', network.rx_ont, 'network', 'rx_ont'], ['RX ODP', network.rx_odp, 'network', 'rx_odp'], ['Speedtest Download', '', null, null, true], ['Speedtest Upload', '', null, null, true], ['Ping (ms)', '', null, null, true], ['Jitter (ms)', '', null, null, true], ['Catatan Test', '', null, null, true], ['Tanggal Bergabung', customer.join_date, 'customer', 'join_date'], ['Hari Tagihan', customer.billing_day, 'customer', 'billing_day'], ['Status', customer.status, 'customer', 'status'], ['Masa Aktif', customer.active_period, 'customer', 'active_period']
     ];
     let activeEditCustomer = null;
+    const showCustomerCreate = () => {
+      activeEditCustomer={create:true,customer:{},network:{}};
+      customerDetailSubtitle.textContent='Isi data pelanggan baru. Nama wajib diisi; nomor dan kode pelanggan dibuat otomatis bila kosong.';
+      customerDetailGrid.innerHTML=customerDetailFields({},{}).map(([label,value,group,field,readOnly])=>`<div class="customer-detail-item"><label><span>${escapeCell(label)}</span><input type="text" data-group="${group||''}" data-field="${field||''}" value="${escapeCell(value??'')}"${readOnly?' readonly':''}></label></div>`).join('');
+      customerDetailDialog.showModal();
+    };
     const showCustomerDetail = async (summaryCustomer) => {
       showDataLoading('Memuat detail pelanggan…','Mengambil seluruh informasi pelanggan.');
       try {
@@ -482,13 +489,15 @@
         customerDetailDialog.showModal();
       } catch(error) { setCustomerStatus(error.message,true); } finally { hideDataLoading(); }
     };
+    addCustomerButton.addEventListener('click', showCustomerCreate);
     cancelCustomerDetail.addEventListener('click', () => { activeEditCustomer=null; customerDetailDialog.close(); });
     saveCustomerDetail.addEventListener('click', async () => {
       if (!activeEditCustomer) return;
-      const customer={id:activeEditCustomer.customer.id}; const network={};
+      const isCreate=Boolean(activeEditCustomer.create); const customer=isCreate?{}:{id:activeEditCustomer.customer.id}; const network={};
       customerDetailGrid.querySelectorAll('input[data-field]').forEach((input) => { if (!input.dataset.field || input.readOnly) return; if (input.dataset.group==='customer') customer[input.dataset.field]=input.value; if (input.dataset.group==='network') network[input.dataset.field]=input.value; });
-      saveCustomerDetail.disabled=true; customerDetailDialog.close(); showDataLoading('Menyimpan perubahan…','Memperbarui data pelanggan di Supabase.');
-      try { const response=await fetch('/api/customers',{method:'PATCH',headers:{'Content-Type':'application/json'},body:JSON.stringify({customer,network})}); const result=await response.json(); if(!response.ok) throw new Error(result.error||'Perubahan gagal disimpan'); activeEditCustomer=null; window.billingState=null; await loadBillingSummary(); await loadCustomers(); setCustomerStatus(result.message||'Perubahan pelanggan berhasil disimpan.'); } catch(error) { setCustomerStatus(error.message,true); } finally { hideDataLoading(); saveCustomerDetail.disabled=false; }
+      if (!String(customer.name||'').trim()) { setCustomerStatus('Nama pelanggan wajib diisi.',true); return; }
+      saveCustomerDetail.disabled=true; customerDetailDialog.close(); showDataLoading(isCreate?'Menyimpan data baru…':'Menyimpan perubahan…',isCreate?'Menambahkan pelanggan ke Supabase.':'Memperbarui data pelanggan di Supabase.');
+      try { const response=await fetch('/api/customers',{method:isCreate?'POST':'PATCH',headers:{'Content-Type':'application/json'},body:JSON.stringify({customer,network})}); const result=await response.json(); if(!response.ok) throw new Error(result.error||'Data pelanggan gagal disimpan'); activeEditCustomer=null; window.billingState=null; await loadBillingSummary(); await loadCustomers(); setCustomerStatus(result.message||'Data pelanggan berhasil disimpan.'); } catch(error) { setCustomerStatus(error.message,true); } finally { hideDataLoading(); saveCustomerDetail.disabled=false; }
     });
     const normalizeSearchText = (value) => String(value ?? '').toLocaleLowerCase('id-ID').normalize('NFD').replace(/[\u0300-\u036f]/g,'');
     const searchScore = (customer, query) => {
