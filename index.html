@@ -491,17 +491,17 @@
         <div class="loading-content"><div class="loading-spinner" aria-hidden="true"></div><strong id="dataLoadingTitle">Memproses data…</strong><span id="dataLoadingMessage">Mohon tunggu dan jangan tutup halaman.</span></div>
       </dialog>
 
-      <section class="page-view reference-panel" id="odp" hidden aria-labelledby="odpTitle">
-        <div class="reference-head"><div><h2 id="odpTitle">Data ODP</h2><p>Daftar Optical Distribution Point yang tersimpan di Supabase.</p></div><div class="reference-actions"><button type="button" data-reference-refresh="odp">↻ Muat ulang</button></div></div>
-        <div class="reference-status" id="odpStatus" role="status"></div><div class="reference-table-wrap"><table class="reference-table"><thead id="odpHead"></thead><tbody id="odpBody"></tbody></table><div class="reference-empty" id="odpEmpty" hidden>Tidak ada data ODP.</div></div>
+      <section class="page-view reference-panel customer-panel" id="odp" hidden aria-labelledby="odpTitle">
+        <div class="customer-head"><div class="customer-navigation"><button type="button" class="back-dashboard" data-reference-back>← Beranda</button><button type="button" class="primary" data-reference-add="odp">TAMBAH ODP</button></div><div><h2 id="odpTitle">Data ODP</h2><p>Daftar Optical Distribution Point yang tersimpan di Supabase.</p></div><div class="customer-actions"><button type="button" class="secondary" data-reference-refresh="odp">↻ Muat ulang</button></div></div>
+        <div class="customer-status reference-status" id="odpStatus" role="status"></div><div class="customer-table-wrap reference-table-wrap"><table class="customer-table reference-table"><thead id="odpHead"></thead><tbody id="odpBody"></tbody></table><div class="empty-customers reference-empty" id="odpEmpty" hidden>Tidak ada data ODP.</div></div>
       </section>
-      <section class="page-view reference-panel" id="area" hidden aria-labelledby="areaTitle">
-        <div class="reference-head"><div><h2 id="areaTitle">Data Area</h2><p>Daftar area layanan dan kode cabangnya.</p></div><div class="reference-actions"><button type="button" data-reference-refresh="area">↻ Muat ulang</button></div></div>
-        <div class="reference-status" id="areaStatus" role="status"></div><div class="reference-table-wrap"><table class="reference-table"><thead id="areaHead"></thead><tbody id="areaBody"></tbody></table><div class="reference-empty" id="areaEmpty" hidden>Tidak ada data area.</div></div>
+      <section class="page-view reference-panel customer-panel" id="area" hidden aria-labelledby="areaTitle">
+        <div class="customer-head"><div class="customer-navigation"><button type="button" class="back-dashboard" data-reference-back>← Beranda</button><button type="button" class="primary" data-reference-add="area">TAMBAH AREA</button></div><div><h2 id="areaTitle">Data Area</h2><p>Daftar area layanan dan kode cabangnya.</p></div><div class="customer-actions"><button type="button" class="secondary" data-reference-refresh="area">↻ Muat ulang</button></div></div>
+        <div class="customer-status reference-status" id="areaStatus" role="status"></div><div class="customer-table-wrap reference-table-wrap"><table class="customer-table reference-table"><thead id="areaHead"></thead><tbody id="areaBody"></tbody></table><div class="empty-customers reference-empty" id="areaEmpty" hidden>Tidak ada data area.</div></div>
       </section>
-      <section class="page-view reference-panel" id="paket" hidden aria-labelledby="paketTitle">
-        <div class="reference-head"><div><h2 id="paketTitle">Data Paket</h2><p>Daftar paket internet, harga, dan profil MikroTik.</p></div><div class="reference-actions"><button type="button" data-reference-refresh="paket">↻ Muat ulang</button></div></div>
-        <div class="reference-status" id="paketStatus" role="status"></div><div class="reference-table-wrap"><table class="reference-table"><thead id="paketHead"></thead><tbody id="paketBody"></tbody></table><div class="reference-empty" id="paketEmpty" hidden>Tidak ada data paket.</div></div>
+      <section class="page-view reference-panel customer-panel" id="paket" hidden aria-labelledby="paketTitle">
+        <div class="customer-head"><div class="customer-navigation"><button type="button" class="back-dashboard" data-reference-back>← Beranda</button><button type="button" class="primary" data-reference-add="paket">TAMBAH PAKET</button></div><div><h2 id="paketTitle">Data Paket</h2><p>Daftar paket internet, harga, dan profil MikroTik.</p></div><div class="customer-actions"><button type="button" class="secondary" data-reference-refresh="paket">↻ Muat ulang</button></div></div>
+        <div class="customer-status reference-status" id="paketStatus" role="status"></div><div class="customer-table-wrap reference-table-wrap"><table class="customer-table reference-table"><thead id="paketHead"></thead><tbody id="paketBody"></tbody></table><div class="empty-customers reference-empty" id="paketEmpty" hidden>Tidak ada data paket.</div></div>
       </section>
       <footer>© 2026 Billing WangonNet - By Capik</footer>
     </main>
@@ -691,8 +691,9 @@
       const config=referenceConfig[type], head=document.getElementById(`${type}Head`), body=document.getElementById(`${type}Body`), empty=document.getElementById(`${type}Empty`), status=document.getElementById(`${type}Status`);
       status.textContent='Memuat data dari Supabase…'; empty.hidden=true; body.innerHTML=''; head.innerHTML='';
       try { const response=await fetch(`/api/reference-data?type=${encodeURIComponent(type)}`,{cache:'no-store'}); const result=await response.json(); if(!response.ok) throw new Error(result.error||'Data tidak dapat dimuat');
-        head.innerHTML=`<tr>${config.columns.map(([,label])=>`<th>${escapeCell(label)}</th>`).join('')}</tr>`;
-        body.innerHTML=(result.data||[]).map(row=>`<tr>${config.columns.map(([key])=>`<td>${escapeCell(formatReferenceValue(key,row[key]))}</td>`).join('')}</tr>`).join('');
+        const actionLabel=type==='odp'?'ODP':type==='area'?'area':'paket';
+        head.innerHTML=`<tr><th>Aksi</th>${config.columns.map(([,label])=>`<th>${escapeCell(label)}</th>`).join('')}</tr>`;
+        body.innerHTML=(result.data||[]).map((row,index)=>`<tr data-reference-type="${escapeCell(type)}" data-reference-index="${index}"><td><span class="row-actions"><button type="button" class="row-action" data-action="edit" title="Edit ${actionLabel}" aria-label="Edit ${actionLabel}">✎</button><button type="button" class="row-action row-action-delete" data-action="delete" title="Hapus ${actionLabel}" aria-label="Hapus ${actionLabel}"><svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true" focusable="false"><path fill="currentColor" d="M9 3h6l1 2h4v2H4V5h4l1-2Zm-3 6h12l-1 12H7L6 9Zm3 2v8h2v-8H9Zm4 0v8h2v-8h-2Z"/></svg></button></span></td>${config.columns.map(([key])=>`<td>${escapeCell(formatReferenceValue(key,row[key]))}</td>`).join('')}</tr>`).join('');
         empty.hidden=(result.data||[]).length>0; status.textContent=`${result.count||0} data tersedia.`;
       } catch(error) { status.textContent=error.message; }
     };
@@ -701,6 +702,9 @@
     document.querySelectorAll('a[href="#dashboard"]').forEach(a=>a.addEventListener('click',e=>{e.preventDefault();showDashboard();}));
     ['odp','area','paket'].forEach(type=>document.querySelectorAll(`a[href="#${type}"]`).forEach(a=>a.addEventListener('click',e=>{e.preventDefault();showReference(type);})));
     document.querySelectorAll('[data-reference-refresh]').forEach(button=>button.addEventListener('click',()=>loadReference(button.dataset.referenceRefresh)));
+    document.querySelectorAll('[data-reference-back]').forEach(button=>button.addEventListener('click',showDashboard));
+    document.querySelectorAll('[data-reference-add]').forEach(button=>button.addEventListener('click',()=>{ const label=button.dataset.referenceAdd==='odp'?'ODP':button.dataset.referenceAdd==='area'?'area':'paket'; document.getElementById(`${button.dataset.referenceAdd}Status`).textContent=`Tambah ${label}: form akan tersedia pada tahap berikutnya.`; }));
+    document.querySelectorAll('.reference-panel').forEach(panel=>panel.addEventListener('click',(event)=>{ const button=event.target.closest('.row-action'); if(!button) return; const type=panel.id; const label=type==='odp'?'ODP':type==='area'?'area':'paket'; panel.querySelector('.reference-status').textContent=`${button.dataset.action==='edit'?'Edit':'Hapus'} ${label}: aksi tampilan siap diproses pada tahap berikutnya.`; }));
     const customerCard = document.getElementById('customerCard');
     customerCard.addEventListener('click', (event) => { if (!event.target.closest('a')) showCustomers(); });
     customerCard.addEventListener('keydown', (event) => { if ((event.key === 'Enter' || event.key === ' ') && !event.target.closest('a')) { event.preventDefault(); showCustomers(); } });
