@@ -1,0 +1,11 @@
+const fs = require('node:fs');
+const assert = require('node:assert/strict');
+const html = fs.readFileSync('./index.html', 'utf8');
+const source = fs.readFileSync('./api/workbook.js', 'utf8');
+assert.match(html, /id="importPreviewDialog"/);
+assert.match(html, /id="confirmImportPreview"/);
+assert.match(html, /pendingImportPayload,confirm:true/);
+assert.match(html, /Belum ada data yang disimpan/);
+assert.match(source, /ON CONFLICT|uniqueRows/);
+assert.match(source, /payload\.confirm !== true/);
+console.log('import preview and deduplication checks: OK');

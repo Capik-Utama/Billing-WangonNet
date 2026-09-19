@@ -176,6 +176,41 @@ async function upsert(table, rows, onConflict) {
   return result;
 }
 
+function uniqueRows(rows, keyFn) {
+  const seen = new Set();
+  const unique = [];
+  let duplicates = 0;
+  for (const row of rows) {
+    const key = keyFn(row);
+    if (!key || seen.has(key)) { if (key) duplicates++; else unique.push(row); continue; }
+    seen.add(key);
+    unique.push(row);
+  }
+  return { rows: unique, duplicates };
+}
+
+async function buildImportPreview(valid) {
+  const [customers, packages, areas, odps] = await Promise.all([
+    supabase('customers?select=customer_code,name&limit=10000'),
+    supabase('internet_packages?select=branch_code,package_code,package_name&limit=10000'),
+    supabase('areas?select=area_code,area_name&limit=10000'),
+    supabase('odps?select=odp_code,odp_name&limit=10000')
+  ]);
+  const compare = (incoming, existing, keyFn, labelFn) => {
+    const existingKeys = new Set((existing || []).map(keyFn).filter(Boolean));
+    const details = incoming.map((row) => ({ action: existingKeys.has(keyFn(row)) ? 'edit' : 'baru', label: labelFn(row) }));
+    return { new: details.filter((item) => item.action === 'baru').length, updated: details.filter((item) => item.action === 'edit').length, details };
+  };
+  return {
+    customers: compare(valid.customers, customers, (row) => row.customer_code, (row) => `${row.customer_code || '(tanpa kode)'} — ${row.name || '(tanpa nama)'}`),
+    packages: compare(valid.packages, packages, (row) => `${row.branch_code}|${row.package_code}`, (row) => `${row.package_code || '(tanpa kode)'} — ${row.package_name || '(tanpa nama)'}`),
+    areas: compare(valid.areas, areas, (row) => row.area_code, (row) => `${row.area_code || '(tanpa kode)'} — ${row.area_name || '(tanpa nama)'}`),
+    odps: compare(valid.odps, odps, (row) => row.odp_code, (row) => `${row.odp_code || '(tanpa kode)'} — ${row.odp_name || '(tanpa nama)'}`),
+    skipped: valid.skipped,
+    total_rows: valid.customers.length + valid.packages.length + valid.areas.length + valid.odps.length
+  };
+}
+
 const resetTables = [
   'payments', 'invoices', 'notifications', 'member_cards', 'customer_speed_tests',
   'customer_network', 'customers', 'pppoe_configs', 'odps', 'internet_packages',
@@ -228,12 +263,18 @@ module.exports = async function handler(req, res) {
       if (type === 'unsupported') { report.unsupported.push({ index: sheet.index, name: sheet.name, rows: (sheet.rows || []).length }); continue; }
       grouped[type].push(...mapRows(type, sheet));
     }
-    const valid = { packages: grouped.packages.filter((r) => r.package_code), areas: grouped.areas.filter((r) => r.area_code), odps: grouped.odps.filter((r) => r.odp_code), customers: grouped.customers.filter((r) => r.name || r.customer_code) };
+    const packageRows = uniqueRows(grouped.packages.filter((r) => r.package_code), (r) => `${r.branch_code}|${r.package_code}`);
+    const areaRows = uniqueRows(grouped.areas.filter((r) => r.area_code), (r) => r.area_code);
+    const odpRows = uniqueRows(grouped.odps.filter((r) => r.odp_code), (r) => r.odp_code);
+    const customerRows = uniqueRows(grouped.customers.filter((r) => r.name || r.customer_code), (r) => r.customer_code);
+    const valid = { packages: packageRows.rows, areas: areaRows.rows, odps: odpRows.rows, customers: customerRows.rows, skipped: { duplicate_packages: packageRows.duplicates, duplicate_areas: areaRows.duplicates, duplicate_odps: odpRows.duplicates, duplicate_customers: customerRows.duplicates } };
+    const preview = await buildImportPreview(valid);
+    if (payload.confirm !== true) return json(res, 200, { ok: true, preview, message: 'Pratinjau import siap. Belum ada data yang disimpan.' });
     await upsert('areas', valid.areas, 'area_code'); report.areas = valid.areas.length;
     await upsert('odps', valid.odps, 'odp_code'); report.odps = valid.odps.length;
     await upsert('internet_packages', valid.packages, 'branch_code,package_code'); report.packages = valid.packages.length;
-    const customerRows = valid.customers.map(({ _network, ...customer }) => customer);
-    const saved = await upsert('customers', customerRows, 'customer_code'); report.customers = valid.customers.length;
+    const customerPayloadRows = valid.customers.map(({ _network, ...customer }) => customer);
+    const saved = await upsert('customers', customerPayloadRows, 'customer_code'); report.customers = valid.customers.length;
     const idByCode = new Map(saved.filter((row) => row.customer_code).map((row) => [row.customer_code, row.id]));
     const networks = valid.customers.map((row) => { const customer_id = idByCode.get(row.customer_code); return customer_id ? { customer_id, ...row._network } : null; }).filter(Boolean);
     if (networks.length) { await upsert('customer_network', networks, 'customer_id'); report.network = networks.length; }
@@ -241,4 +282,4 @@ module.exports = async function handler(req, res) {
   } catch (error) { return json(res, 500, { error: error.message }); }
 };
 
-module.exports._test = { normalizeRow, classify, mapRows, parseNumeric, resetTables };
+module.exports._test = { normalizeRow, classify, mapRows, parseNumeric, resetTables, uniqueRows };

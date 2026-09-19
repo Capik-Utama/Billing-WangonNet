@@ -187,6 +187,18 @@
     .customer-actions button.danger:hover, .customer-actions button.danger:focus-visible { background:#8f1c14; outline:3px solid rgba(180,35,24,.25); outline-offset:2px; }
     .file-label input { display:none; }
     .customer-status { min-height:22px; color:var(--muted); font-size:13px; font-weight:700; margin:10px 0; }
+    .import-preview-dialog { width:min(720px, calc(100vw - 28px)); max-height:85vh; border:0; border-radius:16px; padding:0; color:var(--ink); box-shadow:0 18px 60px rgba(0,0,0,.3); }
+    .import-preview-dialog::backdrop { background:rgba(16,42,67,.58); }
+    .import-preview-form { padding:24px; }
+    .import-preview-form h3 { margin:0 0 7px; }
+    .import-preview-form > p { color:var(--muted); margin:0 0 16px; }
+    .import-preview-list { display:grid; gap:8px; max-height:48vh; overflow:auto; margin-bottom:18px; }
+    .import-preview-list details { border:1px solid var(--line); border-radius:9px; padding:10px 12px; background:#f8fbff; }
+    .import-preview-list summary { cursor:pointer; font-weight:800; }
+    .import-preview-list ul { margin:9px 0 0; padding-left:22px; color:var(--muted); max-height:160px; overflow:auto; }
+    .import-preview-actions { display:flex; justify-content:flex-end; gap:8px; }
+    .import-preview-actions button { border:1px solid var(--line); border-radius:8px; padding:10px 14px; font:inherit; font-weight:800; cursor:pointer; }
+    .import-preview-actions .primary { background:var(--accent); color:var(--accent-ink); border-color:var(--accent); }
     .customer-table-wrap { overflow-x:auto; overflow-y:hidden; width:100%; border:1px solid var(--line); border-radius:11px; -webkit-overflow-scrolling:touch; }
     .customer-table { border-collapse:collapse; min-width:1200px; width:max-content; font-size:13px; }
     .customer-table th, .customer-table td { padding:10px 11px; border-bottom:1px solid #e6eef8; text-align:left; white-space:nowrap; }
@@ -251,6 +263,14 @@
           </div>
         </div>
         <div class="customer-status" id="customerStatus" role="status"></div>
+        <dialog class="import-preview-dialog" id="importPreviewDialog" aria-labelledby="importPreviewTitle">
+          <form method="dialog" class="import-preview-form">
+            <h3 id="importPreviewTitle">Pratinjau Import</h3>
+            <p>Periksa perubahan berikut. Belum ada data yang disimpan sampai Anda menekan “Lanjutkan Import”.</p>
+            <div class="import-preview-list" id="importPreviewList"></div>
+            <div class="import-preview-actions"><button type="button" id="cancelImportPreview">Batal</button><button type="button" class="primary" id="confirmImportPreview">Lanjutkan Import</button></div>
+          </form>
+        </dialog>
         <div class="customer-table-wrap"><table class="customer-table"><thead id="customerHead"></thead><tbody id="customerBody"></tbody></table><div class="empty-customers" id="customerEmpty" hidden>Tidak ada data pelanggan.</div></div><div class="pagination" id="customerPagination"></div>
       </section>
 
@@ -306,6 +326,11 @@
     const loadBillingSummary = async () => { try { const response = await fetch('/api/billing', { cache: 'no-store' }); if (!response.ok) throw new Error('Ringkasan billing tidak tersedia'); const data = await response.json(); const summary = data.summary || {}; document.getElementById('customerCount').textContent = (summary.total || 0).toLocaleString('id-ID'); document.getElementById('unpaidCount').textContent = (summary.unpaid || 0).toLocaleString('id-ID'); document.getElementById('paidCount').textContent = (summary.paid || 0).toLocaleString('id-ID'); document.getElementById('revenueAmount').textContent = formatRupiah(summary.revenue); document.getElementById('receivableAmount').textContent = formatRupiah(summary.receivable); window.billingState = data; } catch (error) { console.warn(error.message); } };
     const importCustomerFile = document.getElementById('importCustomerFile');
     const exportCustomerButton = document.getElementById('exportCustomerButton');
+    const importPreviewDialog = document.getElementById('importPreviewDialog');
+    const importPreviewList = document.getElementById('importPreviewList');
+    const cancelImportPreview = document.getElementById('cancelImportPreview');
+    const confirmImportPreview = document.getElementById('confirmImportPreview');
+    let pendingImportPayload = null;
     const deleteAllDataButton = document.getElementById('deleteAllDataButton');
     const deleteAllDataDialog = document.getElementById('deleteAllDataDialog');
     const deleteAllDataPassword = document.getElementById('deleteAllDataPassword');
@@ -329,9 +354,19 @@
       const sheets=workbook.SheetNames.map((name,index)=>{ const ws=workbook.Sheets[name]; const matrix=XLSX.utils.sheet_to_json(ws,{header:1,defval:'',raw:false}); const headerIndex=matrix.findIndex(row=>row.some(value=>/kode paket|nama paket|kode pelanggan|kode cabang|area kode|kapasitas|pppoe usename/i.test(String(value||'')))); const chosenIndex=headerIndex<0?0:headerIndex; let header=matrix[chosenIndex]||[]; if(name.toLowerCase()==='paket') header=['branch_code','kode_paket','nama_paket','harga','profile_name_mikrotik','upload_max_limit_mbps','upload_burst_limit_mbps','upload_burst_threshold_mbps','upload_burst_time_seconds','download_max_limit_mbps','download_burst_limit_mbps','download_burst_threshold_mbps','download_burst_time_seconds']; if(name.toLowerCase()==='odp') header=['location_code','odp_name','area_code','capacity','used_ports','latitude','longitude','odp_code','location_code_detail','location_name']; const rows=matrix.slice(chosenIndex+1).filter(row=>row.some(value=>value!==''&&value!==null&&value!==undefined)).map(row=>Object.fromEntries(header.map((label,i)=>[String(label||`Kolom ${i+1}`).trim(),row[i]??'']))); return {index,name,rows}; });
       return {sheets};
     };
+    const renderImportPreview = (preview) => {
+      const sections=[['customers','Data Pelanggan'],['packages','Data Paket'],['areas','Data Area'],['odps','Data ODP']];
+      importPreviewList.innerHTML=sections.map(([key,label])=>{const item=preview[key]||{}; const details=Array.isArray(item.details)?item.details:[]; const duplicate=Number(preview.skipped?.[`duplicate_${key}`]||0); return `<details><summary>${escapeCell(label)}: ${item.new||0} baru, ${item.updated||0} edit${duplicate?`, ${duplicate} duplikat dilewati`:''}</summary><ul>${details.length?details.map(detail=>`<li>${escapeCell(detail.action==='edit'?'Edit: ':'Baru: ')}${escapeCell(detail.label)}</li>`).join(''):'<li>Tidak ada perubahan</li>'}</ul></details>`;}).join('');
+    };
+    cancelImportPreview.addEventListener('click', () => { pendingImportPayload=null; importPreviewDialog.close(); });
+    confirmImportPreview.addEventListener('click', async () => {
+      if (!pendingImportPayload) return;
+      confirmImportPreview.disabled=true; setCustomerStatus('Menyimpan hasil import…');
+      try { const response=await fetch('/api/workbook',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({...pendingImportPayload,confirm:true})}); const result=await response.json(); if(!response.ok)throw new Error(result.error||'Import gagal'); const report=result.report||{}; pendingImportPayload=null; importPreviewDialog.close(); setCustomerStatus(`Import selesai: ${report.customers||0} pelanggan, ${report.odps||0} ODP, ${report.areas||0} area, ${report.packages||0} paket. Sheet8 dilewati (${report.ignored_sheet_8||0} baris).`); await loadBillingSummary(); await loadCustomers(); } catch(error) { setCustomerStatus(error.message,true); } finally { confirmImportPreview.disabled=false; }
+    });
     importCustomerFile.addEventListener('change', async (event) => {
       const file=event.target.files?.[0]; if(!file)return; setCustomerStatus(`Membaca ${file.name}…`);
-      try { const payload=await readWorkbookForImport(file); const response=await fetch('/api/workbook',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)}); const result=await response.json(); if(!response.ok)throw new Error(result.error||'Import gagal'); const report=result.report||{}; setCustomerStatus(`Import selesai: ${report.customers||0} pelanggan, ${report.odps||0} ODP, ${report.areas||0} area, ${report.packages||0} paket. Sheet8 dilewati (${report.ignored_sheet_8||0} baris).`); await loadBillingSummary(); await loadCustomers(); } catch(error) { setCustomerStatus(error.message,true); } finally { event.target.value=''; }
+      try { const payload=await readWorkbookForImport(file); const response=await fetch('/api/workbook',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)}); const result=await response.json(); if(!response.ok)throw new Error(result.error||'Pratinjau import gagal'); pendingImportPayload=payload; renderImportPreview(result.preview||{}); importPreviewDialog.showModal(); } catch(error) { setCustomerStatus(error.message,true); } finally { event.target.value=''; }
     });
     const exportWorkbook = async () => {
       setCustomerStatus('Menyiapkan workbook export…');
