@@ -199,6 +199,13 @@
     .import-preview-actions { display:flex; justify-content:flex-end; gap:8px; }
     .import-preview-actions button { border:1px solid var(--line); border-radius:8px; padding:10px 14px; font:inherit; font-weight:800; cursor:pointer; }
     .import-preview-actions .primary { background:var(--accent); color:var(--accent-ink); border-color:var(--accent); }
+    .loading-dialog { border:0; border-radius:16px; padding:0; width:min(360px, calc(100vw - 32px)); box-shadow:0 18px 60px rgba(0,0,0,.3); color:var(--ink); }
+    .loading-dialog::backdrop { background:rgba(16,42,67,.58); }
+    .loading-content { display:grid; justify-items:center; gap:12px; padding:28px 24px; text-align:center; }
+    .loading-spinner { width:38px; height:38px; border:4px solid var(--line); border-top-color:var(--accent); border-radius:50%; animation:loading-spin .8s linear infinite; }
+    .loading-content strong { font-size:16px; }
+    .loading-content span { color:var(--muted); font-size:13px; }
+    @keyframes loading-spin { to { transform:rotate(360deg); } }
     .customer-table-wrap { overflow-x:auto; overflow-y:hidden; width:100%; border:1px solid var(--line); border-radius:11px; -webkit-overflow-scrolling:touch; }
     .customer-table { border-collapse:collapse; min-width:1200px; width:max-content; font-size:13px; }
     .customer-table th, .customer-table td { padding:10px 11px; border-bottom:1px solid #e6eef8; text-align:left; white-space:nowrap; }
@@ -282,6 +289,9 @@
           <div class="delete-dialog-actions"><button type="button" id="cancelDeleteAllData">Batal</button><button type="button" class="danger" id="confirmDeleteAllData">Hapus Permanen</button></div>
         </form>
       </dialog>
+      <dialog class="loading-dialog" id="dataLoadingDialog" aria-labelledby="dataLoadingTitle" aria-busy="true">
+        <div class="loading-content"><div class="loading-spinner" aria-hidden="true"></div><strong id="dataLoadingTitle">Memproses data…</strong><span id="dataLoadingMessage">Mohon tunggu dan jangan tutup halaman.</span></div>
+      </dialog>
 
       <section class="page-view reference-panel" id="odp" hidden aria-labelledby="odpTitle">
         <div class="reference-head"><div><h2 id="odpTitle">Data ODP</h2><p>Daftar Optical Distribution Point yang tersimpan di Supabase.</p></div><div class="reference-actions"><button type="button" data-reference-refresh="odp">↻ Muat ulang</button></div></div>
@@ -336,6 +346,11 @@
     const deleteAllDataPassword = document.getElementById('deleteAllDataPassword');
     const cancelDeleteAllData = document.getElementById('cancelDeleteAllData');
     const confirmDeleteAllData = document.getElementById('confirmDeleteAllData');
+    const dataLoadingDialog = document.getElementById('dataLoadingDialog');
+    const dataLoadingTitle = document.getElementById('dataLoadingTitle');
+    const dataLoadingMessage = document.getElementById('dataLoadingMessage');
+    const showDataLoading = (title, message) => { dataLoadingTitle.textContent=title; dataLoadingMessage.textContent=message; if (!dataLoadingDialog.open) dataLoadingDialog.showModal(); };
+    const hideDataLoading = () => { if (dataLoadingDialog.open) dataLoadingDialog.close(); };
     deleteAllDataButton.addEventListener('click', () => { deleteAllDataPassword.value=''; deleteAllDataDialog.showModal(); setTimeout(() => deleteAllDataPassword.focus(), 0); });
     cancelDeleteAllData.addEventListener('click', () => deleteAllDataDialog.close());
     confirmDeleteAllData.addEventListener('click', async () => {
@@ -343,11 +358,12 @@
       if (!password) { deleteAllDataPassword.focus(); return; }
       if (!window.confirm('Yakin ingin menghapus SEMUA data operasional? Tindakan ini tidak dapat dibatalkan.')) return;
       confirmDeleteAllData.disabled=true;
+      deleteAllDataDialog.close(); showDataLoading('Menghapus semua data…','Data sedang dihapus dari database. Mohon tunggu.');
       try {
         const response=await fetch('/api/workbook',{method:'DELETE',headers:{'Content-Type':'application/json'},body:JSON.stringify({password})});
         const result=await response.json(); if (!response.ok) throw new Error(result.error||'Penghapusan gagal');
         deleteAllDataDialog.close(); window.billingState=null; customers=[]; renderCustomers(); await loadBillingSummary(); setCustomerStatus(result.message||'Semua data berhasil dihapus.');
-      } catch(error) { setCustomerStatus(error.message,true); } finally { confirmDeleteAllData.disabled=false; }
+      } catch(error) { setCustomerStatus(error.message,true); } finally { hideDataLoading(); confirmDeleteAllData.disabled=false; }
     });
     const readWorkbookForImport = async (file) => {
       const buffer=await file.arrayBuffer(); const workbook=XLSX.read(buffer,{type:'array',cellFormula:true,cellDates:true});
@@ -361,15 +377,16 @@
     cancelImportPreview.addEventListener('click', () => { pendingImportPayload=null; importPreviewDialog.close(); });
     confirmImportPreview.addEventListener('click', async () => {
       if (!pendingImportPayload) return;
-      confirmImportPreview.disabled=true; setCustomerStatus('Menyimpan hasil import…');
-      try { const response=await fetch('/api/workbook',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({...pendingImportPayload,confirm:true})}); const result=await response.json(); if(!response.ok)throw new Error(result.error||'Import gagal'); const report=result.report||{}; pendingImportPayload=null; importPreviewDialog.close(); setCustomerStatus(`Import selesai: ${report.customers||0} pelanggan, ${report.odps||0} ODP, ${report.areas||0} area, ${report.packages||0} paket. Sheet8 dilewati (${report.ignored_sheet_8||0} baris).`); await loadBillingSummary(); await loadCustomers(); } catch(error) { setCustomerStatus(error.message,true); } finally { confirmImportPreview.disabled=false; }
+      confirmImportPreview.disabled=true; importPreviewDialog.close(); showDataLoading('Mengimport data…','Menyimpan data Excel ke database. Mohon tunggu.'); setCustomerStatus('Menyimpan hasil import…');
+      try { const response=await fetch('/api/workbook',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({...pendingImportPayload,confirm:true})}); const result=await response.json(); if(!response.ok)throw new Error(result.error||'Import gagal'); const report=result.report||{}; pendingImportPayload=null; setCustomerStatus(`Import selesai: ${report.customers||0} pelanggan, ${report.odps||0} ODP, ${report.areas||0} area, ${report.packages||0} paket. Sheet8 dilewati (${report.ignored_sheet_8||0} baris).`); await loadBillingSummary(); await loadCustomers(); } catch(error) { setCustomerStatus(error.message,true); } finally { hideDataLoading(); confirmImportPreview.disabled=false; }
     });
     importCustomerFile.addEventListener('change', async (event) => {
       const file=event.target.files?.[0]; if(!file)return; setCustomerStatus(`Membaca ${file.name}…`);
-      try { const payload=await readWorkbookForImport(file); const response=await fetch('/api/workbook',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)}); const result=await response.json(); if(!response.ok)throw new Error(result.error||'Pratinjau import gagal'); pendingImportPayload=payload; renderImportPreview(result.preview||{}); importPreviewDialog.showModal(); } catch(error) { setCustomerStatus(error.message,true); } finally { event.target.value=''; }
+      showDataLoading('Membaca file import…','Menganalisis isi Excel dan menyiapkan pratinjau.');
+      try { const payload=await readWorkbookForImport(file); const response=await fetch('/api/workbook',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)}); const result=await response.json(); if(!response.ok)throw new Error(result.error||'Pratinjau import gagal'); pendingImportPayload=payload; renderImportPreview(result.preview||{}); importPreviewDialog.showModal(); } catch(error) { setCustomerStatus(error.message,true); } finally { hideDataLoading(); event.target.value=''; }
     });
     const exportWorkbook = async () => {
-      setCustomerStatus('Menyiapkan workbook export…');
+      showDataLoading('Menyiapkan export…','Mengambil data dan membuat file Excel. Mohon tunggu.'); setCustomerStatus('Menyiapkan workbook export…'); exportCustomerButton.disabled=true;
       try { const response=await fetch('/api/workbook',{cache:'no-store'}); const result=await response.json(); if(!response.ok)throw new Error(result.error||'Export gagal'); const data=result.data||{}; const wb=XLSX.utils.book_new();
         const add=(name,headers,rows)=>{const ws=XLSX.utils.aoa_to_sheet([headers,...rows]);XLSX.utils.book_append_sheet(wb,ws,name);return ws;};
         add('Paket',['Kode Cabang','Kode Paket','Nama Paket','Harga','Profile name (mikrotik)','Upload Max Limit','Upload Burst Limit','Upload Burst Threshold','Upload Burst Time','Download Max Limit','Download Burst Limit','Download Burst Threshold','Download Burst Time'],(data.packages||[]).map(r=>[r.branch_code,r.package_code,r.package_name,r.price,r.mikrotik_profile_name,r.upload_max_limit_mbps,r.upload_burst_limit_mbps,r.upload_burst_threshold_mbps,r.upload_burst_time_seconds,r.download_max_limit_mbps,r.download_burst_limit_mbps,r.download_burst_threshold_mbps,r.download_burst_time_seconds]));
@@ -379,7 +396,7 @@
         const rows=(data.customers||[]).map((c,i)=>{const n=networks.get(c.id)||{};const odp=odps.get(n.odp_code)||{};const row=[c.source_no,c.name,c.customer_code||'',c.branch_code,c.area_code,c.package_name,c.sales_name,c.national_id,c.phone,c.email,c.whatsapp,c.address,c.rt,c.rw,c.village,c.district,c.city_regency,c.latitude,c.longitude,n.pppoe_username,n.pppoe_password,n.onu_serial,'', '',n.vlan,'',odp.location_code||n.odp_code||'', '',n.modem_type,n.mac_address,n.ip_address,n.onu_attenuation,n.odp_attenuation,n.rx_ont,n.rx_odp,'','','','', '',c.join_date,c.billing_day,c.status,c.active_period]; row[2]={f:`IF(A${i+2}="","","5067-"&TEXT(A${i+2},"0000"))`,v:c.customer_code||`5067-${String(c.source_no||'').padStart(4,'0')}`}; row[22]={f:`IF(AA${i+2}="","","5067 HSGQ ("&MID(AA${i+2},FIND("(",AA${i+2})+1,FIND(".",AA${i+2},FIND("(",AA${i+2}))-FIND("(",AA${i+2})-1)&")")`,v:n.olt||''}; row[23]={f:`IF(AA${i+2}="","",MID(AA${i+2},FIND(".",AA${i+2},FIND(".",AA${i+2},FIND("(",AA${i+2}))+1)+1,FIND(")",AA${i+2},FIND("(",AA${i+2}))-FIND(".",AA${i+2},FIND(".",AA${i+2},FIND("(",AA${i+2}))+1)-1)*1)`,v:n.pon||''}; row[27]={f:`IF(AA${i+2}="","",IF(COUNTIF($AA$2:AA${i+2},AA${i+2})<=VLOOKUP(AA${i+2},ODP!$A:$D,4,FALSE),COUNTIF($AA$2:AA${i+2},AA${i+2}),"Penuh"))`,v:n.odp_port||''}; return row;});
         const ws=add('pelanggan',headers,rows); ws['!freeze']={xSplit:0,ySplit:1};
         XLSX.writeFile(wb,`5067-export-${new Date().toISOString().slice(0,10)}.xlsx`); setCustomerStatus(`Export selesai: ${(data.customers||[]).length.toLocaleString('id-ID')} pelanggan dengan formula relasi ODP.`);
-      } catch(error) { setCustomerStatus(error.message,true); }
+      } catch(error) { setCustomerStatus(error.message,true); } finally { hideDataLoading(); exportCustomerButton.disabled=false; }
     };
     exportCustomerButton.addEventListener('click',exportWorkbook);
     const customerCount = document.getElementById('customerCount');

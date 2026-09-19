@@ -1,0 +1,12 @@
+const fs = require('node:fs');
+const assert = require('node:assert/strict');
+const html = fs.readFileSync('./index.html', 'utf8');
+assert.match(html, /id="dataLoadingDialog"/);
+assert.match(html, /showDataLoading\('Membaca file import/);
+assert.match(html, /showDataLoading\('Mengimport data/);
+assert.match(html, /showDataLoading\('Menyiapkan export/);
+assert.match(html, /showDataLoading\('Menghapus semua data/);
+assert.match(html, /finally \{ hideDataLoading\(\);/);
+assert.match(html, /exportCustomerButton\.disabled=true/);
+assert.match(html, /confirmDeleteAllData\.disabled=true/);
+console.log('loading dialog checks: OK');
