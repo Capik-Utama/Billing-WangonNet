@@ -511,6 +511,13 @@
             <div class="customer-detail-actions"><button type="button" id="cancelCustomerDelete">Batal</button><button type="button" class="danger" id="confirmCustomerDelete">Hapus</button></div>
           </form>
         </dialog>
+        <dialog class="customer-detail-dialog" id="customerStatusDialog" aria-labelledby="customerStatusTitle">
+          <form method="dialog" class="customer-detail-form">
+            <h3 id="customerStatusTitle">Konfirmasi Status Pelanggan</h3>
+            <p class="customer-detail-subtitle" id="customerStatusSubtitle">Pastikan perubahan status pelanggan sudah benar.</p>
+            <div class="customer-detail-actions"><button type="button" id="cancelCustomerStatus">Batal</button><button type="button" class="primary" id="confirmCustomerStatus">Konfirmasi</button></div>
+          </form>
+        </dialog>
         <div class="customer-search"><div class="customer-selection-summary"><label class="select-all-control"><input type="checkbox" id="selectAllCustomers" aria-label="Pilih semua pelanggan di halaman ini"><span id="selectedCustomerCount">0 dipilih</span></label></div><input id="customerSearch" type="search" placeholder="Cari pelanggan, ID, no HP, alamat, paket, ODP…" autocomplete="off" /></div>
         <dialog class="import-preview-dialog" id="importPreviewDialog" aria-labelledby="importPreviewTitle">
           <form method="dialog" class="import-preview-form">
@@ -712,6 +719,17 @@
     const customerDeleteDialog = document.getElementById('customerDeleteDialog');
     const customerDeletePassword = document.getElementById('customerDeletePassword');
     let activeCustomerDelete = [];
+    const customerStatusDialog = document.getElementById('customerStatusDialog');
+    let activeCustomerStatus = null;
+    const openCustomerStatus = (selected, status) => {
+      activeCustomerStatus = { selected: selected.filter(Boolean), status };
+      if (!activeCustomerStatus.selected.length) return;
+      const action = status === 'Aktif' ? 'mengaktifkan' : 'menonaktifkan';
+      document.getElementById('customerStatusTitle').textContent = `${status === 'Aktif' ? 'Aktifkan' : 'Nonaktifkan'} Pelanggan`;
+      document.getElementById('customerStatusSubtitle').textContent = `Anda akan ${action} ${activeCustomerStatus.selected.length} pelanggan. Lanjutkan?`;
+      document.getElementById('confirmCustomerStatus').textContent = status === 'Aktif' ? 'Aktifkan' : 'Nonaktifkan';
+      customerStatusDialog.showModal();
+    };
     const openCustomerDelete = (selected) => {
       activeCustomerDelete = selected.filter(Boolean);
       if (!activeCustomerDelete.length) return;
@@ -745,6 +763,14 @@
       } catch(error) { setCustomerStatus(error.message,true); } finally { hideDataLoading(); }
     };
     addCustomerButton.addEventListener('click', showCustomerCreate);
+    document.getElementById('cancelCustomerStatus').addEventListener('click', () => { activeCustomerStatus=null; customerStatusDialog.close(); });
+    document.getElementById('confirmCustomerStatus').addEventListener('click', async () => {
+      if (!activeCustomerStatus) return;
+      const { selected, status } = activeCustomerStatus;
+      const button = document.getElementById('confirmCustomerStatus'); button.disabled=true;
+      try { customerStatusDialog.close(); activeCustomerStatus=null; await updateCustomerStatus(selected, status); }
+      finally { button.disabled=false; }
+    });
     document.getElementById('cancelCustomerDelete').addEventListener('click', () => { activeCustomerDelete=[]; customerDeleteDialog.close(); });
     document.getElementById('confirmCustomerDelete').addEventListener('click', async () => {
       if (!activeCustomerDelete.length) return;
@@ -806,7 +832,7 @@
       if(!selected.length) return;
       if(action==='edit'||action==='payment'){ if(selected.length!==1) return setCustomerStatus(`Pilih tepat satu pelanggan untuk ${action==='edit'?'edit':'melihat pembayaran'}.`,true); showCustomerDetail(selected[0]); return; }
       if(action==='delete') return openCustomerDelete(selected);
-      if(action==='activate'||action==='deactivate') return updateCustomerStatus(selected,action==='activate'?'Aktif':'Nonaktif');
+      if(action==='activate'||action==='deactivate') return openCustomerStatus(selected,action==='activate'?'Aktif':'Nonaktif');
     }));
     const loadCustomers = async () => { try { const billing=window.billingState || await (await fetch('/api/billing',{cache:'no-store'})).json(); const fullResponse=await fetch('/api/customers',{cache:'no-store'}); const fullResult=fullResponse.ok?await fullResponse.json():{customers:[]}; const fullByCode=new Map((fullResult.customers||[]).map((customer)=>[customer.customer_code,customer])); customerHeaders=['NO','ID Pelanggan','Nama','Alamat','No HP','Paket Internet','Harga','Hari Tagihan','Pembayaran','Status']; customers=(billing.customers||[]).map((customer)=>({...fullByCode.get(customer.customer_code),...customer,sheet_row:[customer.source_no,customerIdFromPppoe(customer.pppoe_username),customer.name,customer.address,customer.phone,customer.package_name,customer.package?.price,customer.billing_day,customer.billing.payment_status,customer.status], billing:customer.billing})); renderCustomers(); } catch(e) { setCustomerStatus(e.message,true); } };
     const dashboardPage = document.getElementById('dashboard');
@@ -884,7 +910,7 @@
       const action=button.dataset.action;
       if(action==='edit'||action==='payment'){ showCustomerDetail(selected); if(action==='payment') setCustomerStatus(`Popup detail pembayaran ${selected.name||'pelanggan'} dibuka.`); return; }
       if(action==='delete') return openCustomerDelete([selected]);
-      if(action==='activate'||action==='deactivate') return updateCustomerStatus([selected],action==='activate'?'Aktif':'Nonaktif');
+      if(action==='activate'||action==='deactivate') return openCustomerStatus([selected],action==='activate'?'Aktif':'Nonaktif');
     });
     loadCustomers();
     if (location.hash === '#pelanggan') showCustomers(); else if (['odp','area','paket'].includes(location.hash.slice(1))) showReference(location.hash.slice(1));
