@@ -44,3 +44,9 @@ Langkah setup service account:
 6. Simpan seluruh isi JSON sebagai environment variable rahasia `GOOGLE_SERVICE_ACCOUNT_JSON` pada deployment Billing.
 
 Jangan commit file JSON key ke repository dan jangan menaruh private key di `index.html`.
+
+## Data Akun dan login Google
+
+Menu `Kelola Data → Data Akun` menyediakan login Google melalui OAuth serta kolom target file Spreadsheet. Aplikasi tidak meminta atau menyimpan password Google. Setelah login, refresh token disimpan sebagai cookie HttpOnly dan digunakan server untuk membaca/menulis Spreadsheet saat tombol manual dijalankan.
+
+OAuth memerlukan environment variable `GOOGLE_OAUTH_CLIENT_ID`, `GOOGLE_OAUTH_CLIENT_SECRET`, dan `GOOGLE_OAUTH_REDIRECT_URI`. Redirect URI harus diarahkan ke `/api/google-auth?action=callback` pada domain deployment Billing dan terdaftar di Google Cloud OAuth Client. Scope yang diminta adalah profil email dan `https://www.googleapis.com/auth/spreadsheets`. Akun Google yang login tetap harus memiliki akses Editor terhadap target Spreadsheet.

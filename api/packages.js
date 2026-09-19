@@ -1,7 +1,7 @@
 'use strict';
 
 const { getSession } = require('./session');
-const { SPREADSHEET_ID, headers, readPackageSheet, packageRecords, packageKey, comparable, writeRows } = require('../lib/package-sheet');
+const { headers, readPackageSheet, packageRecords, packageKey, comparable, writeRows, spreadsheetId } = require('../lib/package-sheet');
 
 const SUPABASE_URL = process.env.SUPABASE_URL;
 const SUPABASE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_SECRET_KEY;
@@ -38,8 +38,8 @@ async function importPackages(sheetRecords) {
   for (const change of changes.updated) { try { await sb(`internet_packages?branch_code=eq.${encodeURIComponent(change.after.branch_code)}&package_code=eq.${encodeURIComponent(change.after.package_code)}`, { method: 'PATCH', headers: { Prefer: 'return=minimal' }, body: JSON.stringify(cleanForDb(change.after)) }); updated++; } catch (error) { errors.push({ row: change.after.source_row_number, error: error.message }); } }
   return { inserted, updated, skipped: changes.skipped.length, errors };
 }
-async function exportPackages() {
-  const [sheet, database] = await Promise.all([readPackageSheet(), dbPackages()]);
+async function exportPackages(req) {
+  const [sheet, database] = await Promise.all([readPackageSheet(req), dbPackages()]);
   const formulaColumns = new Set(sheet.formulaColumns); const sheetRows = packageRecords(sheet.rows); const dbByKey = new Map(database.map((record) => [packageKey(record), record]));
   const updates = []; const seen = new Set(); let updated = 0; let appended = 0;
   for (let i = 0; i < sheetRows.length; i++) {
@@ -51,19 +51,19 @@ async function exportPackages() {
   }
   const nextRow = Math.max(3, sheet.rows.length + 1);
   for (const record of database) if (!seen.has(packageKey(record))) { const rowNumber = nextRow + appended; const values = sheetRow(record).map((value, column) => formulaColumns.has(column) ? '' : value); updates.push({ range: `${encodeURIComponent('Paket')}!A${rowNumber}:M${rowNumber}`, values: [values] }); appended++; }
-  const result = await writeRows(updates); return { updated, appended, skippedFormulaColumns: [...formulaColumns], totalUpdatedCells: result.totalUpdatedCells || 0 };
+  const result = await writeRows(req, updates); return { updated, appended, skippedFormulaColumns: [...formulaColumns], totalUpdatedCells: result.totalUpdatedCells || 0 };
 }
 
 module.exports = async function handler(req, res) {
   if (!getSession(req)) return json(res, 401, { error: 'Belum login' });
   try {
     const body = typeof req.body === 'string' ? JSON.parse(req.body) : (req.body || {});
-    if (req.method === 'GET') { const [sheet, database] = await Promise.all([readPackageSheet(), dbPackages()]); return json(res, 200, { spreadsheetId: SPREADSHEET_ID, headers, sheet, packages: database, changes: diffRows(packageRecords(sheet.rows), database) }); }
+    if (req.method === 'GET') { const [sheet, database] = await Promise.all([readPackageSheet(req), dbPackages()]); return json(res, 200, { spreadsheetId: spreadsheetId(req), headers, sheet, packages: database, changes: diffRows(packageRecords(sheet.rows), database) }); }
     if (req.method !== 'POST') return json(res, 405, { error: 'Method tidak diizinkan' });
-    const sheet = await readPackageSheet();
+    const sheet = await readPackageSheet(req);
     if (body.action === 'preview-import') return json(res, 200, { ...diffRows(packageRecords(sheet.rows), await dbPackages()), formulaColumns: sheet.formulaColumns });
     if (body.action === 'import') return json(res, 200, { ok: true, ...(await importPackages(packageRecords(sheet.rows))) });
-    if (body.action === 'export') return json(res, 200, { ok: true, ...(await exportPackages()) });
+    if (body.action === 'export') return json(res, 200, { ok: true, ...(await exportPackages(req)) });
     return json(res, 400, { error: 'Aksi Paket tidak dikenal' });
   } catch (error) { return json(res, 500, { error: error.message }); }
 };
