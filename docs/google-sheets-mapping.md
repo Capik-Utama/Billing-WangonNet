@@ -52,6 +52,18 @@ Spreadsheet ID: `1g2GzzTF214d2-duyuriun-gIGgeHtcxFnXOQO2d4Drg`
 | `Masa Aktif` | `customers.active_period` |
 | Kolom kosong dan seluruh kolom sumber | `raw_record` dan `source_sheet_rows.row_data` |
 
+## Kolom Paket
+
+| Kolom Spreadsheet | Tabel/kolom Supabase |
+|---|---|
+| `Cabang` | `internet_packages.branch_code` |
+| `Kode Paket` | `internet_packages.package_code` |
+| `Nama Paket` | `internet_packages.package_name` |
+| `Harga` | `internet_packages.price` |
+| `Profile name (mikrotik)` | `internet_packages.mikrotik_profile_name` |
+| `Max Limit`, `Burst Limit`, `Burst Threshold`, `Burst Time` pada Target Upload | Kolom `upload_*` pada `internet_packages` |
+| `Max Limit`, `Burst Limit`, `Burst Threshold`, `Burst Time` pada Target Download | Kolom `download_*` pada `internet_packages` |
+
 ## Kolom tambahan yang disiapkan
 
 Struktur juga menyiapkan data yang belum terdapat sebagai kolom eksplisit pada spreadsheet:
@@ -78,7 +90,9 @@ Struktur juga menyiapkan data yang belum terdapat sebagai kolom eksplisit pada s
 
 Migrasi struktur sudah disiapkan di `supabase/migrations/20260918_prepare_spreadsheet_import.sql`. Tahap ini hanya menyiapkan struktur; belum mengimpor isi spreadsheet.
 
-Sinkronisasi dua arah billing ↔ Supabase ↔ Google Sheets sudah dipensiunkan. Dokumen ini hanya tersisa sebagai referensi struktur data dan impor manual yang tidak berjalan otomatis.
+Sinkronisasi otomatis dua arah billing ↔ Supabase ↔ Google Sheets sudah dipensiunkan. Modul Paket menggunakan pertukaran manual berbasis tombol: Billing membaca dan menulis tab `Paket` hanya saat pengguna meminta.
+
+Import Paket hanya melakukan insert/update berdasarkan gabungan `Cabang` + `Kode Paket`; data yang hilang dari Spreadsheet tidak dihapus dari Supabase. Export Paket hanya memperbarui baris yang cocok dan menambahkan paket baru. Kolom yang memiliki formula berdasarkan respons Google Sheets tidak ditimpa.
 
 ## Formula billing di aplikasi
 

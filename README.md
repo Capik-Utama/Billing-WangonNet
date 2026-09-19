@@ -27,3 +27,9 @@ Environment variable berikut adalah variabel yang saat ini direferensikan langsu
 - `GOOGLE_SHEET_ID` dan `GOOGLE_SHEET_CUSTOMERS_GID` hanya bila ingin memakai impor manual pelanggan dari Google Sheets
 
 Impor manual Google Sheets pada implementasi saat ini memakai endpoint ekspor CSV publik milik Google Sheets dari `api/customers.js`, sehingga repository ini tidak menyertakan konfigurasi service account Google tambahan.
+
+## Modul Data Paket
+
+Tab `Paket` mendukung proses manual dua arah melalui Billing tanpa Apps Script otomatis. Tombol `Import from Spreadsheet` membaca baris Paket, memfilter kode paket kosong/duplikat, lalu melakukan insert atau update ke tabel `internet_packages`. Tombol `Export ke Spreadsheet` memperbarui baris yang cocok dan menambahkan paket baru berdasarkan gabungan `Cabang` + `Kode Paket`; kolom yang terdeteksi berisi formula tidak pernah ditimpa.
+
+Untuk koneksi Google Sheets pada deployment, set `GOOGLE_SHEET_ID` dan token OAuth dengan scope Google Sheets pada `GOOGLE_SHEETS_ACCESS_TOKEN`. Token CLI lokal `GOOGLE_WORKSPACE_CLI_TOKEN` dipakai hanya untuk pengujian di sandbox dan tidak boleh disalin ke repository.

@@ -36,3 +36,4 @@ module.exports = function handler(req, res) {
   }
   return json(res, 405, { error: "Method tidak diizinkan" });
 };
+module.exports.getSession = getSession;
