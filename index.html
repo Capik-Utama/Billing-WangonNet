@@ -238,6 +238,10 @@
     .customer-detail-actions { display:flex; justify-content:flex-end; gap:8px; margin-top:18px; }
     .customer-detail-actions button { border:1px solid var(--line); border-radius:8px; padding:10px 14px; font:inherit; font-weight:800; cursor:pointer; }
     .customer-detail-actions .primary { background:var(--accent); color:var(--accent-ink); border-color:var(--accent); }
+    .customer-detail-actions .danger { background:#b42318; color:#fff; border-color:#b42318; }
+    .reference-password-label { display:grid; gap:7px; color:var(--muted); font-size:13px; font-weight:800; }
+    .reference-password-label input { width:100%; border:1px solid var(--line); border-radius:7px; padding:9px 10px; color:var(--ink); background:#fff; font:inherit; }
+    .reference-password-label input:focus { outline:2px solid rgba(8,125,240,.2); border-color:var(--accent); }
     @media (max-width:640px) { .customer-detail-grid { grid-template-columns:1fr; } .customer-detail-form { padding:18px; } .customer-detail-item label { grid-template-columns:104px minmax(0,1fr); } }
     .loading-dialog { border:0; border-radius:16px; padding:0; width:min(360px, calc(100vw - 32px)); box-shadow:0 18px 60px rgba(0,0,0,.3); color:var(--ink); }
     .loading-dialog::backdrop { background:rgba(16,42,67,.58); }
@@ -503,6 +507,22 @@
         <div class="customer-head"><div class="customer-navigation"><button type="button" class="back-dashboard" data-reference-back>← Beranda</button><button type="button" class="primary" data-reference-add="paket">TAMBAH PAKET</button></div><div><h2 id="paketTitle">Data Paket</h2><p>Daftar paket internet, harga, dan profil MikroTik.</p></div><div class="customer-actions"><button type="button" class="secondary" data-reference-refresh="paket">↻ Muat ulang</button></div></div>
         <div class="customer-status reference-status" id="paketStatus" role="status"></div><div class="customer-table-wrap reference-table-wrap"><table class="customer-table reference-table"><thead id="paketHead"></thead><tbody id="paketBody"></tbody></table><div class="empty-customers reference-empty" id="paketEmpty" hidden>Tidak ada data paket.</div></div>
       </section>
+      <dialog class="customer-detail-dialog" id="referenceDetailDialog" aria-labelledby="referenceDetailTitle">
+        <form method="dialog" class="customer-detail-form" id="referenceDetailForm">
+          <h3 id="referenceDetailTitle">Data Reference</h3>
+          <p class="customer-detail-subtitle" id="referenceDetailSubtitle"></p>
+          <div class="customer-detail-grid" id="referenceDetailGrid"></div>
+          <div class="customer-detail-actions"><button type="button" id="cancelReferenceDetail">Batal</button><button type="button" class="primary" id="saveReferenceDetail">Simpan</button></div>
+        </form>
+      </dialog>
+      <dialog class="customer-detail-dialog" id="referenceDeleteDialog" aria-labelledby="referenceDeleteTitle">
+        <form method="dialog" class="customer-detail-form" id="referenceDeleteForm">
+          <h3 id="referenceDeleteTitle">Hapus Data</h3>
+          <p class="customer-detail-subtitle" id="referenceDeleteSubtitle">Masukkan password login Anda untuk melanjutkan penghapusan.</p>
+          <label class="reference-password-label">Password login<input type="password" id="referenceDeletePassword" autocomplete="current-password" required></label>
+          <div class="customer-detail-actions"><button type="button" id="cancelReferenceDelete">Batal</button><button type="button" class="danger" id="confirmReferenceDelete">Hapus</button></div>
+        </form>
+      </dialog>
       <footer>© 2026 Billing WangonNet - By Capik</footer>
     </main>
   </div>
@@ -678,10 +698,19 @@
     const loadCustomers = async () => { try { const billing=window.billingState || await (await fetch('/api/billing',{cache:'no-store'})).json(); const fullResponse=await fetch('/api/customers',{cache:'no-store'}); const fullResult=fullResponse.ok?await fullResponse.json():{customers:[]}; const fullByCode=new Map((fullResult.customers||[]).map((customer)=>[customer.customer_code,customer])); customerHeaders=['NO','Nama','Kode Pelanggan','Cabang','Area','Paket Internet','Harga','ODP','Port ODP','Status Tagihan','Sisa Tagihan']; customers=(billing.customers||[]).map((customer)=>({...fullByCode.get(customer.customer_code),...customer,sheet_row:[customer.source_no,customer.name,customer.customer_code,customer.branch_code,customer.area_code,customer.package_name,customer.package.price,customer.odp_code,customer.odp_port,customer.billing.payment_status,customer.billing.remaining_amount], billing:customer.billing})); renderCustomers(); } catch(e) { setCustomerStatus(e.message,true); } };
     const dashboardPage = document.getElementById('dashboard');
     const referenceConfig = {
-      odp: { columns: [['odp_code','Kode ODP'],['odp_name','Nama ODP'],['area_code','Kode Area'],['capacity','Kapasitas'],['used_ports','Port Terpakai'],['location_name','Lokasi']] },
-      area: { columns: [['area_code','Kode Area'],['area_name','Nama Area'],['area_abbreviation','Singkatan'],['branch_code','Kode Cabang']] },
-      paket: { columns: [['package_code','Kode Paket'],['package_name','Nama Paket'],['price','Harga'],['mikrotik_profile_name','Profil MikroTik'],['download_max_limit_mbps','Download Maks. (Mbps)'],['upload_max_limit_mbps','Upload Maks. (Mbps)']] }
+      odp: { label:'ODP', columns: [['odp_code','Kode ODP'],['odp_name','Nama ODP'],['area_code','Kode Area'],['capacity','Kapasitas'],['used_ports','Port Terpakai'],['location_name','Lokasi']], fields: [['odp_code','Kode ODP','text'],['odp_name','Nama ODP','text'],['area_code','Kode Area','text'],['capacity','Kapasitas','number'],['used_ports','Port Terpakai','number'],['location_name','Lokasi','text']] },
+      area: { label:'area', columns: [['area_code','Kode Area'],['area_name','Nama Area'],['area_abbreviation','Singkatan'],['branch_code','Kode Cabang']], fields: [['area_code','Kode Area','text'],['area_name','Nama Area','text'],['area_abbreviation','Singkatan','text'],['branch_code','Kode Cabang','text']] },
+      paket: { label:'paket', columns: [['package_code','Kode Paket'],['package_name','Nama Paket'],['price','Harga'],['mikrotik_profile_name','Profil MikroTik'],['download_max_limit_mbps','Download Maks. (Mbps)'],['upload_max_limit_mbps','Upload Maks. (Mbps)']], fields: [['branch_code','Kode Cabang','text'],['package_code','Kode Paket','text'],['package_name','Nama Paket','text'],['price','Harga','number'],['mikrotik_profile_name','Profil MikroTik','text'],['download_max_limit_mbps','Download Maks. (Mbps)','number'],['upload_max_limit_mbps','Upload Maks. (Mbps)','number']] }
     };
+    const referenceRows = { odp: [], area: [], paket: [] };
+    const referenceDetailDialog = document.getElementById('referenceDetailDialog');
+    const referenceDetailGrid = document.getElementById('referenceDetailGrid');
+    const referenceDetailTitle = document.getElementById('referenceDetailTitle');
+    const referenceDetailSubtitle = document.getElementById('referenceDetailSubtitle');
+    const referenceDeleteDialog = document.getElementById('referenceDeleteDialog');
+    const referenceDeletePassword = document.getElementById('referenceDeletePassword');
+    let activeReferenceEdit = null;
+    let activeReferenceDelete = null;
     const referencePanels = [...document.querySelectorAll('.reference-panel')];
     const hideAllPages = () => { dashboardPage.hidden=true; customerPanel.hidden=true; referencePanels.forEach(panel=>{panel.hidden=true;}); };
     const showDashboard = () => { hideAllPages(); dashboardPage.hidden=false; history.replaceState(null, '', '#dashboard'); };
@@ -691,20 +720,31 @@
       const config=referenceConfig[type], head=document.getElementById(`${type}Head`), body=document.getElementById(`${type}Body`), empty=document.getElementById(`${type}Empty`), status=document.getElementById(`${type}Status`);
       status.textContent='Memuat data dari Supabase…'; empty.hidden=true; body.innerHTML=''; head.innerHTML='';
       try { const response=await fetch(`/api/reference-data?type=${encodeURIComponent(type)}`,{cache:'no-store'}); const result=await response.json(); if(!response.ok) throw new Error(result.error||'Data tidak dapat dimuat');
-        const actionLabel=type==='odp'?'ODP':type==='area'?'area':'paket';
+        referenceRows[type]=result.data||[];
+        const actionLabel=config.label;
         head.innerHTML=`<tr><th>Aksi</th>${config.columns.map(([,label])=>`<th>${escapeCell(label)}</th>`).join('')}</tr>`;
         body.innerHTML=(result.data||[]).map((row,index)=>`<tr data-reference-type="${escapeCell(type)}" data-reference-index="${index}"><td><span class="row-actions"><button type="button" class="row-action" data-action="edit" title="Edit ${actionLabel}" aria-label="Edit ${actionLabel}">✎</button><button type="button" class="row-action row-action-delete" data-action="delete" title="Hapus ${actionLabel}" aria-label="Hapus ${actionLabel}"><svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true" focusable="false"><path fill="currentColor" d="M9 3h6l1 2h4v2H4V5h4l1-2Zm-3 6h12l-1 12H7L6 9Zm3 2v8h2v-8H9Zm4 0v8h2v-8h-2Z"/></svg></button></span></td>${config.columns.map(([key])=>`<td>${escapeCell(formatReferenceValue(key,row[key]))}</td>`).join('')}</tr>`).join('');
         empty.hidden=(result.data||[]).length>0; status.textContent=`${result.count||0} data tersedia.`;
       } catch(error) { status.textContent=error.message; }
     };
     const showReference = (type) => { hideAllPages(); const panel=document.getElementById(type); panel.hidden=false; history.replaceState(null, '', `#${type}`); loadReference(type); };
+    const openReferenceEditor = (type, row = {}) => {
+      const config=referenceConfig[type]; activeReferenceEdit={type,id:row.id||null}; referenceDetailTitle.textContent=`${row.id?'Edit':'Tambah'} Data ${config.label}`; referenceDetailSubtitle.textContent=row.id?'Perbarui data lalu tekan Simpan.':'Isi data baru untuk disimpan ke Supabase.';
+      referenceDetailGrid.innerHTML=config.fields.map(([key,label,inputType])=>`<div class="customer-detail-item"><label><span>${escapeCell(label)}</span><input type="${inputType}" data-reference-field="${key}" value="${escapeCell(row[key]??'')}"${inputType==='number'?' step="any"':''}></label></div>`).join(''); referenceDetailDialog.showModal();
+    };
+    const openReferenceDelete = (type, row) => { activeReferenceDelete={type,id:row.id}; referenceDeleteDialog.querySelector('#referenceDeleteTitle').textContent=`Hapus Data ${referenceConfig[type].label}`; referenceDeleteDialog.querySelector('#referenceDeleteSubtitle').textContent=`Data ${row[referenceConfig[type].columns[0][0]]||''} akan dihapus. Masukkan password login Anda untuk melanjutkan.`; referenceDeletePassword.value=''; referenceDeleteDialog.showModal(); setTimeout(()=>referenceDeletePassword.focus(),0); };
+    const setReferenceStatus = (type,message,isError=false) => { const status=document.getElementById(`${type}Status`); status.textContent=message; status.style.color=isError?'#b42318':''; };
+    document.getElementById('cancelReferenceDetail').addEventListener('click',()=>{activeReferenceEdit=null; referenceDetailDialog.close();});
+    document.getElementById('cancelReferenceDelete').addEventListener('click',()=>{activeReferenceDelete=null; referenceDeleteDialog.close();});
+    document.getElementById('saveReferenceDetail').addEventListener('click',async()=>{ if(!activeReferenceEdit) return; const {type,id}=activeReferenceEdit; const data=Object.fromEntries([...referenceDetailGrid.querySelectorAll('[data-reference-field]')].map(input=>[input.dataset.referenceField,input.value])); const button=document.getElementById('saveReferenceDetail'); button.disabled=true; try { const response=await fetch(`/api/reference-data?type=${encodeURIComponent(type)}`,{method:id?'PATCH':'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({id,data})}); const result=await response.json(); if(!response.ok) throw new Error(result.error||'Data gagal disimpan'); referenceDetailDialog.close(); activeReferenceEdit=null; await loadReference(type); setReferenceStatus(type,result.message); } catch(error) { referenceDetailSubtitle.textContent=error.message; setReferenceStatus(type,error.message,true); } finally { button.disabled=false; } });
+    document.getElementById('confirmReferenceDelete').addEventListener('click',async()=>{ if(!activeReferenceDelete) return; const {type,id}=activeReferenceDelete; const password=referenceDeletePassword.value; if(!password) { referenceDeleteDialog.querySelector('#referenceDeleteSubtitle').textContent='Password login wajib diisi.'; return; } const button=document.getElementById('confirmReferenceDelete'); button.disabled=true; try { const response=await fetch(`/api/reference-data?type=${encodeURIComponent(type)}`,{method:'DELETE',headers:{'Content-Type':'application/json'},body:JSON.stringify({id,password})}); const result=await response.json(); if(!response.ok) throw new Error(result.error||'Data gagal dihapus'); referenceDeleteDialog.close(); activeReferenceDelete=null; await loadReference(type); setReferenceStatus(type,result.message); } catch(error) { referenceDeleteDialog.querySelector('#referenceDeleteSubtitle').textContent=error.message; setReferenceStatus(type,error.message,true); } finally { button.disabled=false; } });
     document.querySelectorAll('a[href="#pelanggan"]').forEach(a=>a.addEventListener('click',e=>{e.preventDefault();showCustomers();}));
     document.querySelectorAll('a[href="#dashboard"]').forEach(a=>a.addEventListener('click',e=>{e.preventDefault();showDashboard();}));
     ['odp','area','paket'].forEach(type=>document.querySelectorAll(`a[href="#${type}"]`).forEach(a=>a.addEventListener('click',e=>{e.preventDefault();showReference(type);})));
     document.querySelectorAll('[data-reference-refresh]').forEach(button=>button.addEventListener('click',()=>loadReference(button.dataset.referenceRefresh)));
     document.querySelectorAll('[data-reference-back]').forEach(button=>button.addEventListener('click',showDashboard));
-    document.querySelectorAll('[data-reference-add]').forEach(button=>button.addEventListener('click',()=>{ const label=button.dataset.referenceAdd==='odp'?'ODP':button.dataset.referenceAdd==='area'?'area':'paket'; document.getElementById(`${button.dataset.referenceAdd}Status`).textContent=`Tambah ${label}: form akan tersedia pada tahap berikutnya.`; }));
-    document.querySelectorAll('.reference-panel').forEach(panel=>panel.addEventListener('click',(event)=>{ const button=event.target.closest('.row-action'); if(!button) return; const type=panel.id; const label=type==='odp'?'ODP':type==='area'?'area':'paket'; panel.querySelector('.reference-status').textContent=`${button.dataset.action==='edit'?'Edit':'Hapus'} ${label}: aksi tampilan siap diproses pada tahap berikutnya.`; }));
+    document.querySelectorAll('[data-reference-add]').forEach(button=>button.addEventListener('click',()=>openReferenceEditor(button.dataset.referenceAdd)));
+    document.querySelectorAll('.reference-panel').forEach(panel=>panel.addEventListener('click',(event)=>{ const button=event.target.closest('.row-action'); if(!button) return; const type=panel.id; const row=referenceRows[type][Number(button.closest('tr')?.dataset.referenceIndex)]; if(!row) return; if(button.dataset.action==='edit') openReferenceEditor(type,row); else openReferenceDelete(type,row); }));
     const customerCard = document.getElementById('customerCard');
     customerCard.addEventListener('click', (event) => { if (!event.target.closest('a')) showCustomers(); });
     customerCard.addEventListener('keydown', (event) => { if ((event.key === 'Enter' || event.key === ' ') && !event.target.closest('a')) { event.preventDefault(); showCustomers(); } });
