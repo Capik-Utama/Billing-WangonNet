@@ -298,8 +298,10 @@
     body.theme-gelap .delete-data-scope label { color:#f9fafb; }
     @media (max-width:760px) {
       .customer-head { display:block; }
-      .customer-navigation { margin-bottom:14px; flex-wrap:wrap; }
-      .customer-title-inline { order:-1; flex:1 1 100%; margin:0 0 2px; }
+      .customer-navigation { display:grid; grid-template-columns:minmax(0, 0.95fr) minmax(0, 1.05fr); align-items:center; width:100%; margin-bottom:14px; }
+      .customer-navigation .back-dashboard { grid-column:1 / -1; width:100%; }
+      .customer-navigation > .primary { grid-column:1; min-width:0; }
+      .customer-title-inline { grid-column:2; grid-row:2; min-width:0; margin-left:6px; }
       .customer-title-inline h2, .customer-title-inline p { white-space:normal; }
       .customer-actions { justify-content:flex-start; margin-top:14px; }
       .customer-actions button, .file-label { flex:1 1 calc(50% - 8px); text-align:center; font-size:12px; }
