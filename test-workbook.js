@@ -18,4 +18,6 @@ assert.equal(row._network.raw_record['Redaman ONU'], '-7.633.714.399.293.010');
 
 const [missingName] = mapRows('customers', { rows: [{ 'Kode Pelanggan': 'C-2' }] });
 assert.equal(missingName.name, '');
+const [blankName] = mapRows('customers', { rows: [{ Nama: '   ', 'Kode Pelanggan': 'C-3' }] });
+assert.equal(blankName.name.trim(), '');
 console.log('workbook import numeric tests: OK');

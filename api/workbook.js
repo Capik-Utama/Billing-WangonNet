@@ -166,7 +166,11 @@ function mapRows(type, sheet) {
 }
 
 async function upsert(table, rows, onConflict) {
-  const clean = rows.filter(Boolean);
+  const clean = rows.filter(Boolean).map((row) => {
+    if (table !== 'customers') return row;
+    const name = row.name == null ? '' : String(row.name).trim();
+    return name ? { ...row, name } : null;
+  }).filter(Boolean);
   const result = [];
   for (let i = 0; i < clean.length; i += 250) {
     const chunk = clean.slice(i, i + 250);
@@ -275,7 +279,9 @@ module.exports = async function handler(req, res) {
     const packageRows = uniqueRows(grouped.packages.filter((r) => r.package_code), (r) => `${r.branch_code}|${r.package_code}`);
     const areaRows = uniqueRows(grouped.areas.filter((r) => r.area_code), (r) => r.area_code);
     const odpRows = uniqueRows(grouped.odps.filter((r) => r.odp_code), (r) => r.odp_code);
-    const customerRows = uniqueRows(grouped.customers.filter((r) => r.name || r.customer_code), (r) => r.customer_code);
+    // customers.name is NOT NULL. Keep unnamed source rows in the archive,
+    // but do not send them to the customers table.
+    const customerRows = uniqueRows(grouped.customers.filter((r) => typeof r.name === 'string' && r.name.trim()), (r) => r.customer_code);
     const valid = { packages: packageRows.rows, areas: areaRows.rows, odps: odpRows.rows, customers: customerRows.rows, conflicts: { duplicate_packages: packageRows.duplicates, duplicate_areas: areaRows.duplicates, duplicate_odps: odpRows.duplicates, duplicate_customers: customerRows.duplicates } };
     const preview = await buildImportPreview(valid);
     if (payload.confirm !== true) return json(res, 200, { ok: true, preview, message: 'Pratinjau import siap. Belum ada data yang disimpan.' });
