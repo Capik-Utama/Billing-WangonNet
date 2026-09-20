@@ -28,13 +28,52 @@ async function packageRecords() {
   return supabase('internet_packages?select=package_code,package_name,price,mikrotik_profile_name,download_max_limit_mbps&order=package_name.asc&limit=1000');
 }
 
+function monthRange(now = new Date()) {
+  const start = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), 1));
+  const end = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth() + 1, 1));
+  return { start, end };
+}
+
+function paymentCategory(record) {
+  const relation = Array.isArray(record.payment_types) ? (record.payment_types[0] || {}) : (record.payment_types || {});
+  return String(relation.category || '').trim().toLowerCase();
+}
+
+function classifyPayment(category) {
+  if (/(pengeluaran|expense|beban|biaya|keluar|outgoing)/.test(category)) return 'expense';
+  if (/(pemasukan|income|pendapatan|masuk|payment|bayar)/.test(category)) return 'revenue';
+  return 'unknown';
+}
+
+function summarizeMonthlyFinance(records = []) {
+  return records.reduce((summary, record) => {
+    const amount = Number(record.amount) || 0;
+    const adminFee = Number(record.admin_fee) || 0;
+    const total = amount + adminFee;
+    if (total === 0) return summary;
+    const kind = classifyPayment(paymentCategory(record));
+    if (kind === 'expense') summary.expense += total;
+    if (kind === 'revenue') summary.revenue += total;
+    return summary;
+  }, { revenue: 0, expense: 0 });
+}
+
+async function monthlyFinanceRecords(now = new Date()) {
+  const { start, end } = monthRange(now);
+  const select = 'amount,admin_fee,paid_at,payment_types(category)';
+  return supabase(`payments?select=${encodeURIComponent(select)}&paid_at=gte.${encodeURIComponent(start.toISOString())}&paid_at=lt.${encodeURIComponent(end.toISOString())}&limit=5000`);
+}
+
 module.exports = async function handler(req, res) {
   res.setHeader('Content-Type', 'application/json; charset=utf-8');
   res.setHeader('Cache-Control', 'no-store');
   if (req.method !== 'GET') { res.statusCode = 405; return res.end(JSON.stringify({ error: 'Method tidak diizinkan' })); }
   try {
-    const [records, packages] = await Promise.all([billingRecords(), packageRecords()]);
+    const [records, packages, payments] = await Promise.all([billingRecords(), packageRecords(), monthlyFinanceRecords()]);
     const billing = buildBillingFromRecords(records, packages);
+    const finance = summarizeMonthlyFinance(payments);
+    billing.summary = { ...billing.summary, revenue: finance.revenue, expense: finance.expense };
+    billing.source.tables = [...new Set([...(billing.source.tables || []), 'payments', 'payment_types'])];
     const url = new URL(req.url, 'http://localhost');
     const customerCode = url.searchParams.get('customer');
     if (customerCode) {
@@ -49,4 +88,4 @@ module.exports = async function handler(req, res) {
   }
 };
 
-module.exports._test = { billingRecords };
+module.exports._test = { billingRecords, monthRange, summarizeMonthlyFinance, monthlyFinanceRecords };

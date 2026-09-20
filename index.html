@@ -480,14 +480,14 @@
       <section class="page-view" id="dashboard" aria-labelledby="dashboardTitle">
         <h2 id="dashboardTitle" class="sr-only">Ringkasan dashboard</h2>
       <section class="cards" aria-label="Ringkasan dashboard">
-        <article class="card customer-card" id="customerCard" data-color role="link" tabindex="0" aria-label="Buka Data Pelanggan"><div class="card-body"><div class="card-value" id="customerCount">0</div><div class="card-label">Data Pelanggan</div></div><a class="card-action" href="#pelanggan">Selengkapnya ➜</a></article>
-        <article class="card" data-color><div class="card-body"><div class="card-value" id="unpaidCount">0</div><div class="card-label">Pelanggan Belum Lunas</div></div><a class="card-action" href="#keuangan">Selengkapnya ➜</a></article>
-        <article class="card" data-color><div class="card-body"><div class="card-value" id="paidCount">0</div><div class="card-label">Pelanggan Sudah Lunas</div></div><a class="card-action" href="#keuangan">Selengkapnya ➜</a></article>
-        <article class="card" data-color><div class="card-body"><div class="card-value">0</div><div class="card-label">Buat Ticket Pelanggan</div></div><a class="card-action" href="#ticket">Selengkapnya ➜</a></article>
-        <article class="card" data-color><div class="card-body"><div class="card-value">0</div><div class="card-label">Ticket Open</div></div><a class="card-action" href="#ticket">Selengkapnya ➜</a></article>
-        <article class="card" data-color><div class="card-body"><div class="card-value">0</div><div class="card-label">Ticket Closed</div></div><a class="card-action" href="#ticket">Selengkapnya ➜</a></article>
-        <article class="card finance-card" data-color><div class="card-body"><div class="card-value" id="revenueAmount">Rp. 0</div><div class="card-label">Pemasukan Bulan Ini</div></div><a class="card-action" href="#keuangan">Selengkapnya ➜</a></article>
-        <article class="card finance-card" data-color><div class="card-body"><div class="card-value" id="receivableAmount">Rp. 0</div><div class="card-label">Piutang Berjalan</div></div><a class="card-action" href="#keuangan">Selengkapnya ➜</a></article>
+        <article class="card customer-card" id="customerCard" data-color="customer" role="link" tabindex="0" aria-label="Buka Data Pelanggan"><div class="card-body"><div class="card-value" id="customerCount">0</div><div class="card-label">Data Pelanggan</div></div><a class="card-action" href="#pelanggan">Selengkapnya ➜</a></article>
+        <article class="card" data-color="unpaid"><div class="card-body"><div class="card-value" id="unpaidCount">0</div><div class="card-label">Pelanggan Belum Lunas</div></div><a class="card-action" href="#keuangan">Selengkapnya ➜</a></article>
+        <article class="card" data-color="paid"><div class="card-body"><div class="card-value" id="paidCount">0</div><div class="card-label">Pelanggan Sudah Lunas</div></div><a class="card-action" href="#keuangan">Selengkapnya ➜</a></article>
+        <article class="card" data-color="ticket-create"><div class="card-body"><div class="card-value">0</div><div class="card-label">Buat Tiket Pelanggan</div></div><a class="card-action" href="#ticket">Selengkapnya ➜</a></article>
+        <article class="card" data-color="ticket-open"><div class="card-body"><div class="card-value">0</div><div class="card-label">Tiket Open</div></div><a class="card-action" href="#ticket">Selengkapnya ➜</a></article>
+        <article class="card" data-color="ticket-closed"><div class="card-body"><div class="card-value">0</div><div class="card-label">Tiket Close</div></div><a class="card-action" href="#ticket">Selengkapnya ➜</a></article>
+        <article class="card finance-card" data-color="revenue"><div class="card-body"><div class="card-value" id="revenueAmount">Rp. 0</div><div class="card-label">Pemasukan Bulan Ini</div></div><a class="card-action" href="#keuangan">Selengkapnya ➜</a></article>
+        <article class="card finance-card" data-color="expense"><div class="card-body"><div class="card-value" id="expenseAmount">Rp. 0</div><div class="card-label">Pengeluaran Bulan Ini</div></div><a class="card-action" href="#keuangan">Selengkapnya ➜</a></article>
       </section>
       </section>
 
@@ -612,9 +612,18 @@
   <script src="https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js"></script>
   <script>
 
-    const palette = [['#168f42','#ffffff'],['#087df0','#ffffff'],['#df2939','#ffffff'],['#159bb0','#ffffff'],['#f4b400','#241b00'],['#7138c8','#ffffff'],['#e76f20','#ffffff'],['#087f8c','#ffffff']];
+    const palette = {
+      customer: ['#087df0', '#ffffff'],
+      unpaid: ['#df2939', '#ffffff'],
+      paid: ['#168f42', '#ffffff'],
+      'ticket-create': ['#0f3d91', '#ffffff'],
+      'ticket-open': ['#f4b400', '#241b00'],
+      'ticket-closed': ['#7138c8', '#ffffff'],
+      revenue: ['#168f42', '#ffffff'],
+      expense: ['#df2939', '#ffffff'],
+    };
     const cards = [...document.querySelectorAll('[data-color]')];
-    cards.forEach((card, i) => { const [background, foreground] = palette[i % palette.length]; card.style.background = background; card.style.color = foreground; if (foreground === '#241b00') card.classList.add('dark-text'); });
+    cards.forEach((card) => { const [background, foreground] = palette[card.dataset.color] || ['#087df0', '#ffffff']; card.style.background = background; card.style.color = foreground; card.classList.toggle('dark-text', foreground === '#241b00'); });
     const themeButtons = [...document.querySelectorAll('.theme-option')];
     const applyTheme = (theme) => { const validThemes = ['gelap','biru','hijau','ping']; const selected = validThemes.includes(theme) ? theme : 'biru'; document.body.classList.remove(...validThemes.map((name) => `theme-${name}`)); document.body.classList.add(`theme-${selected}`); themeButtons.forEach((button) => { const active = button.dataset.theme === selected; button.classList.toggle('active', active); button.setAttribute('aria-pressed', String(active)); }); document.querySelector('meta[name="theme-color"]').setAttribute('content', getComputedStyle(document.body).getPropertyValue('--accent').trim()); localStorage.setItem('billing-theme', selected); };
     themeButtons.forEach((button) => button.addEventListener('click', () => applyTheme(button.dataset.theme)));
@@ -634,7 +643,7 @@
 
     const customerPanel = document.getElementById('pelanggan');
     const formatRupiah = (value) => new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', maximumFractionDigits: 0 }).format(Number(value) || 0);
-    const loadBillingSummary = async () => { try { const response = await fetch('/api/billing', { cache: 'no-store' }); if (!response.ok) throw new Error('Ringkasan billing tidak tersedia'); const data = await response.json(); const summary = data.summary || {}; document.getElementById('customerCount').textContent = (summary.total || 0).toLocaleString('id-ID'); document.getElementById('unpaidCount').textContent = (summary.unpaid || 0).toLocaleString('id-ID'); document.getElementById('paidCount').textContent = (summary.paid || 0).toLocaleString('id-ID'); document.getElementById('revenueAmount').textContent = formatRupiah(summary.revenue); document.getElementById('receivableAmount').textContent = formatRupiah(summary.receivable); window.billingState = data; } catch (error) { console.warn(error.message); } };
+    const loadBillingSummary = async () => { try { const response = await fetch('/api/billing', { cache: 'no-store' }); if (!response.ok) throw new Error('Ringkasan billing tidak tersedia'); const data = await response.json(); const summary = data.summary || {}; document.getElementById('customerCount').textContent = (summary.total || 0).toLocaleString('id-ID'); document.getElementById('unpaidCount').textContent = (summary.unpaid || 0).toLocaleString('id-ID'); document.getElementById('paidCount').textContent = (summary.paid || 0).toLocaleString('id-ID'); document.getElementById('revenueAmount').textContent = formatRupiah(summary.revenue); document.getElementById('expenseAmount').textContent = formatRupiah(summary.expense); window.billingState = data; } catch (error) { console.warn(error.message); } };
     const importCustomerFile = document.getElementById('importCustomerFile');
     const exportCustomerButton = document.getElementById('exportCustomerButton');
     const importPreviewDialog = document.getElementById('importPreviewDialog');
