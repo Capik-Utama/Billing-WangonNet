@@ -60,7 +60,7 @@ function summarizeMonthlyFinance(records = []) {
 
 async function monthlyFinanceRecords(now = new Date()) {
   const { start, end } = monthRange(now);
-  const select = 'id,amount,admin_fee,paid_at,payment_types(category)';
+  const select = 'id,amount,paid_at,payment_types(category)';
   const filters = `select=${encodeURIComponent(select)}&paid_at=gte.${start.toISOString()}&paid_at=lt.${end.toISOString()}&order=id.asc`;
   const pageSize = 1000;
   const records = [];
