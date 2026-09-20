@@ -50,12 +50,10 @@ function classifyPayment(category) {
 function summarizeMonthlyFinance(records = []) {
   return records.reduce((summary, record) => {
     const amount = Number(record.amount) || 0;
-    const adminFee = Number(record.admin_fee) || 0;
-    const total = amount + adminFee;
-    if (total === 0) return summary;
+    if (amount === 0) return summary;
     const kind = classifyPayment(paymentCategory(record));
-    if (kind === 'expense') summary.expense += total;
-    if (kind === 'revenue') summary.revenue += total;
+    if (kind === 'expense') summary.expense += amount;
+    if (kind === 'revenue') summary.revenue += amount;
     return summary;
   }, { revenue: 0, expense: 0 });
 }
@@ -63,7 +61,7 @@ function summarizeMonthlyFinance(records = []) {
 async function monthlyFinanceRecords(now = new Date()) {
   const { start, end } = monthRange(now);
   const select = 'id,amount,admin_fee,paid_at,payment_types(category)';
-  const filters = `select=${encodeURIComponent(select)}&paid_at=gte.${encodeURIComponent(start.toISOString())}&paid_at=lt.${encodeURIComponent(end.toISOString())}&order=id.asc`;
+  const filters = `select=${encodeURIComponent(select)}&paid_at=gte.${start.toISOString()}&paid_at=lt.${end.toISOString()}&order=id.asc`;
   const pageSize = 1000;
   const records = [];
   for (let offset = 0;; offset += pageSize) {
