@@ -42,7 +42,7 @@ function paymentCategory(record) {
 function classifyPayment(category) {
   const normalized = String(category || '').toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim();
   const tokens = normalized ? normalized.split(/\s+/) : [];
-  if (['pemasukan', 'income', 'pendapatan', 'payment'].includes(normalized) || tokens.some((token) => ['pemasukan', 'income', 'pendapatan', 'payment', 'bayar'].includes(token))) return 'revenue';
+  if (['pemasukan', 'income', 'pendapatan'].includes(normalized) || tokens.some((token) => ['pemasukan', 'income', 'pendapatan', 'bayar', 'pelunasan', 'tagihan'].includes(token))) return 'revenue';
   if (['pengeluaran', 'expense', 'outgoing'].includes(normalized) || tokens.some((token) => ['pengeluaran', 'expense', 'beban', 'operasional', 'outgoing'].includes(token))) return 'expense';
   return 'unknown';
 }
@@ -67,7 +67,7 @@ async function monthlyFinanceRecords(now = new Date()) {
   let lastPaidAt = null;
   let lastId = null;
   for (;;) {
-    const cursor = lastPaidAt && lastId ? `&or=(paid_at.gt.${lastPaidAt},and(paid_at.eq.${lastPaidAt},id.gt.${lastId}))` : '';
+    const cursor = lastPaidAt && lastId ? `&or=(paid_at.gt.${encodeURIComponent(lastPaidAt)},and(paid_at.eq.${encodeURIComponent(lastPaidAt)},id.gt.${encodeURIComponent(lastId)}))` : '';
     const batch = await supabase(`payments?${baseFilters}&limit=${pageSize}${cursor}`);
     if (!Array.isArray(batch) || batch.length === 0) break;
     records.push(...batch);

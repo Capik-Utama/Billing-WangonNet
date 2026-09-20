@@ -9,6 +9,7 @@ assert.equal(end.toISOString(), '2026-10-01T00:00:00.000Z');
 
 assert.equal(classifyPayment('Pemasukan'), 'revenue');
 assert.equal(classifyPayment('pengeluaran operasional'), 'expense');
+assert.equal(classifyPayment('Beban Payment Gateway'), 'expense');
 assert.equal(classifyPayment('Biaya Pemasangan'), 'unknown');
 assert.equal(classifyPayment('Pendapatan Payment Gateway'), 'revenue');
 
