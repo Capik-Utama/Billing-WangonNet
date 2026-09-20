@@ -40,8 +40,10 @@ function paymentCategory(record) {
 }
 
 function classifyPayment(category) {
-  if (/(pengeluaran|expense|beban|biaya|keluar|outgoing)/.test(category)) return 'expense';
-  if (/(pemasukan|income|pendapatan|masuk|payment|bayar)/.test(category)) return 'revenue';
+  const normalized = category.replace(/[^a-z0-9]+/g, ' ').trim();
+  const tokens = normalized ? normalized.split(/\s+/) : [];
+  if (['pengeluaran', 'expense', 'outgoing'].includes(normalized) || tokens.some((token) => ['pengeluaran', 'expense', 'beban', 'biaya', 'operasional', 'outgoing'].includes(token))) return 'expense';
+  if (['pemasukan', 'income', 'pendapatan', 'payment'].includes(normalized) || tokens.some((token) => ['pemasukan', 'income', 'pendapatan', 'payment', 'bayar'].includes(token))) return 'revenue';
   return 'unknown';
 }
 
@@ -60,8 +62,17 @@ function summarizeMonthlyFinance(records = []) {
 
 async function monthlyFinanceRecords(now = new Date()) {
   const { start, end } = monthRange(now);
-  const select = 'amount,admin_fee,paid_at,payment_types(category)';
-  return supabase(`payments?select=${encodeURIComponent(select)}&paid_at=gte.${encodeURIComponent(start.toISOString())}&paid_at=lt.${encodeURIComponent(end.toISOString())}&limit=5000`);
+  const select = 'id,amount,admin_fee,paid_at,payment_types(category)';
+  const filters = `select=${encodeURIComponent(select)}&paid_at=gte.${encodeURIComponent(start.toISOString())}&paid_at=lt.${encodeURIComponent(end.toISOString())}&order=id.asc`;
+  const pageSize = 1000;
+  const records = [];
+  for (let offset = 0;; offset += pageSize) {
+    const batch = await supabase(`payments?${filters}&limit=${pageSize}&offset=${offset}`);
+    if (!Array.isArray(batch) || batch.length === 0) break;
+    records.push(...batch);
+    if (batch.length < pageSize) break;
+  }
+  return records;
 }
 
 module.exports = async function handler(req, res) {
