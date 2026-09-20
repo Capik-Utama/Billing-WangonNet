@@ -40,7 +40,7 @@ function paymentCategory(record) {
 }
 
 function classifyPayment(category) {
-  const normalized = category.replace(/[^a-z0-9]+/g, ' ').trim();
+  const normalized = String(category || '').toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim();
   const tokens = normalized ? normalized.split(/\s+/) : [];
   if (['pemasukan', 'income', 'pendapatan', 'payment'].includes(normalized) || tokens.some((token) => ['pemasukan', 'income', 'pendapatan', 'payment', 'bayar'].includes(token))) return 'revenue';
   if (['pengeluaran', 'expense', 'outgoing'].includes(normalized) || tokens.some((token) => ['pengeluaran', 'expense', 'beban', 'operasional', 'outgoing'].includes(token))) return 'expense';
