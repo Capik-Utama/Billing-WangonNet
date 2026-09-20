@@ -42,8 +42,8 @@ function paymentCategory(record) {
 function classifyPayment(category) {
   const normalized = category.replace(/[^a-z0-9]+/g, ' ').trim();
   const tokens = normalized ? normalized.split(/\s+/) : [];
-  if (['pengeluaran', 'expense', 'outgoing'].includes(normalized) || tokens.some((token) => ['pengeluaran', 'expense', 'beban', 'biaya', 'operasional', 'outgoing'].includes(token))) return 'expense';
   if (['pemasukan', 'income', 'pendapatan', 'payment'].includes(normalized) || tokens.some((token) => ['pemasukan', 'income', 'pendapatan', 'payment', 'bayar'].includes(token))) return 'revenue';
+  if (['pengeluaran', 'expense', 'outgoing'].includes(normalized) || tokens.some((token) => ['pengeluaran', 'expense', 'beban', 'operasional', 'outgoing'].includes(token))) return 'expense';
   return 'unknown';
 }
 
@@ -61,14 +61,21 @@ function summarizeMonthlyFinance(records = []) {
 async function monthlyFinanceRecords(now = new Date()) {
   const { start, end } = monthRange(now);
   const select = 'id,amount,paid_at,payment_types(category)';
-  const filters = `select=${encodeURIComponent(select)}&paid_at=gte.${start.toISOString()}&paid_at=lt.${end.toISOString()}&order=id.asc`;
+  const baseFilters = `select=${encodeURIComponent(select)}&paid_at=gte.${start.toISOString()}&paid_at=lt.${end.toISOString()}&order=paid_at.asc.nullslast,id.asc`;
   const pageSize = 1000;
   const records = [];
-  for (let offset = 0;; offset += pageSize) {
-    const batch = await supabase(`payments?${filters}&limit=${pageSize}&offset=${offset}`);
+  let lastPaidAt = null;
+  let lastId = null;
+  for (;;) {
+    const cursor = lastPaidAt && lastId ? `&or=(paid_at.gt.${lastPaidAt},and(paid_at.eq.${lastPaidAt},id.gt.${lastId}))` : '';
+    const batch = await supabase(`payments?${baseFilters}&limit=${pageSize}${cursor}`);
     if (!Array.isArray(batch) || batch.length === 0) break;
     records.push(...batch);
     if (batch.length < pageSize) break;
+    const lastRecord = batch[batch.length - 1];
+    lastPaidAt = String(lastRecord.paid_at || '').trim();
+    lastId = String(lastRecord.id || '').trim();
+    if (!lastPaidAt || !lastId) break;
   }
   return records;
 }
@@ -97,4 +104,4 @@ module.exports = async function handler(req, res) {
   }
 };
 
-module.exports._test = { billingRecords, monthRange, summarizeMonthlyFinance, monthlyFinanceRecords };
+module.exports._test = { billingRecords, monthRange, classifyPayment, summarizeMonthlyFinance, monthlyFinanceRecords };
